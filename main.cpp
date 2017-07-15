@@ -32,6 +32,11 @@ struct bar{
     void member2(int value1, int value2) const{
         
     }
+    void overloaded(int ){
+    
+    }
+    void overloaded(float){
+    }
     void set(int value){
         m_member = value;
     }
@@ -441,6 +446,8 @@ int main(){
 
     
     executor.EXEC(&bar::member2), 0,1);
+    executor.EXEC(static_cast<void(bar::*)(int)>(&bar::overloaded)), 1);
+    executor.EXEC(static_cast<void(bar::*)(float)>(&bar::overloaded)), 1.f);
     //std::cout << exec(&bar::member, &cls, 11) << std::endl;
     return 0;
 }
