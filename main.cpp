@@ -1,19 +1,11 @@
 #include <ce/Executor.hpp>
+#include <ce/execute.hpp>
 
 #include <iostream>
 #include <memory>
 #include <map>
 #include <cassert>
 
-template<class R>
-R exec(R(*func)()) {
-    return func();
-}
-
-template<class R, class ... Args>
-R exec(R(*func)(Args...), Args...args) {
-    return func(args...);
-}
 
 template<class T, class R, class... Args>
 R exec(R(T::*func)(Args...), T* This, Args... args) {
@@ -61,7 +53,9 @@ struct bar{
     int get(){
         return m_member;
     }
-    
+    static int staticFunc(){
+        return 5;
+    }
     int m_member = 0;    
 };
 
@@ -92,6 +86,7 @@ int main(){
     std::cout << exec(foo2) << std::endl;
     std::cout << exec(foo3, 10) << std::endl;
     std::cout << exec(bar::foo, 20) << std::endl;
+    std::cout << exec(&bar::staticFunc) << std::endl;
     bar cls;
     auto executor = make_executor(cls);
     std::cout << executor.EXEC(&bar::member), hashed) << std::endl;

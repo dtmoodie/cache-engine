@@ -9,6 +9,7 @@
 #include <ct/String.hpp>
 
 #include <type_traits>
+
 template<class T> struct Executor {
     Executor(T& obj) :m_obj(obj) {}
 
@@ -17,7 +18,7 @@ template<class T> struct Executor {
         size_t hash = generateHash(m_hash, args...);
         hash = combineHash(hash, fhash);
         std::cout << "Hash : " << hash << std::endl;
-        std::shared_ptr<IResult>& result = CacheEngine::instance().getCachedResult(hash);
+        std::shared_ptr<IResult>& result = ICacheEngine::instance().getCachedResult(hash);
         if (result) {
             std::shared_ptr<TResult<R>> tresult = std::dynamic_pointer_cast<TResult<R>>(result);
             if (tresult) {
@@ -52,7 +53,7 @@ template<class T> struct Executor {
         size_t hash = generateHash(m_hash, args...);
         hash = combineHash(hash, fhash);
         std::cout << "Hash: " << hash << std::endl;
-        std::shared_ptr<IResult>& result = CacheEngine::instance().getCachedResult(hash);
+        std::shared_ptr<IResult>& result = ICacheEngine::instance().getCachedResult(hash);
         if (result) {
             std::shared_ptr<TResult<output_tuple_type>> tresult = std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
             if (tresult) {

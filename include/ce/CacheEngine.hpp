@@ -1,18 +1,14 @@
 #pragma once
+#include <ce/ICacheEngine.hpp>
 #include <ce/IResult.hpp>
 #include <memory>
 #include <map>
 
-struct CacheEngine {
-    static CacheEngine& instance() {
-        static CacheEngine inst;
-        return inst;
-    }
+struct CacheEngine : public ICacheEngine{
+    CacheEngine();
 
-    std::shared_ptr<IResult>& getCachedResult(size_t hash) {
-        return m_result_cache[hash];
-    }
+    std::shared_ptr<IResult>& getCachedResult(size_t hash);
 private:
-    CacheEngine() {}
+    
     std::map<size_t, std::shared_ptr<IResult>> m_result_cache;
 };
