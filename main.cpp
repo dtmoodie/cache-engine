@@ -29,7 +29,9 @@ struct bar{
     void apply(int value, int& output){
         output = value;
     }
-    
+    void member2(int value1, int value2) const{
+        
+    }
     void set(int value){
         m_member = value;
     }
@@ -270,7 +272,8 @@ template<class T, class ... Args> struct OutputPack<typename std::enable_if<Outp
     }
 };
 
-template<class T, class ... Args> struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type, HashedOutput<T>, Args...>: public OutputPack<void, Args...>{
+template<class T, class ... Args> 
+struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type, HashedOutput<T>, Args...>: public OutputPack<void, Args...>{
     enum {
         OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
     };
@@ -289,9 +292,11 @@ template<class T, class ... Args> struct OutputPack<typename std::enable_if<Outp
     }
 };
 #define CE_MEM_FUN(fun) #fun, fun
-template<class T, class ... Args> struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT != 0>::type, T, Args...>: public OutputPack<void, Args...>{
+
+template<class T, class ... Args> 
+struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT != 0>::type, T, Args...>: public OutputPack<void, Args...>{
     enum {
-        OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
+        OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
     };
     typedef typename OutputPack<void, Args...>::types types;
     typedef typename convert_in_tuple<types>::type TupleType;
@@ -304,19 +309,21 @@ template<class T, class ... Args> struct OutputPack<typename std::enable_if<Outp
     }
 };
 
-template<class T, class ... Args> struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type, T, Args...>: public OutputPack<void, Args...>{
+template<class T, class ... Args> 
+struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type, T, Args...>: public OutputPack<void, Args...>{
     enum {
-        OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
+        OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
     };
 };
 
 
 template<class T> struct Executor{    
     Executor(T& obj):m_obj(obj){}
-    template<class R, class...FArgs, class... Args>
+
+    template<uint32_t fhash, class R, class...FArgs, class... Args>
     R exec(R(T::*func)(FArgs...), Args&&... args){
         size_t hash = generateHash(m_hash, args...);
-        
+        hash = combineHash(hash, fhash);
         std::cout << "Hash : " << hash << std::endl;
         std::shared_ptr<IResult>& result = CacheEngine::instance().getCachedResult(hash);
         if(result){
@@ -331,12 +338,27 @@ template<class T> struct Executor{
         result.reset(new TResult<R>(std::forward<R>(ret)));
         return ret;
     }
-    template<class...FArgs, class...Args>
+
+    template<uint32_t fhash, class...FArgs, class... Args>
+    typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type exec(void(T::*func)(FArgs...) const, Args&&... args) {
+        // no output but it's a const call soooo execute
+        (m_obj.*func)(get(std::forward<Args>(args))...);
+    }
+
+    template<uint32_t fhash, class...FArgs, class... Args>
+    typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type exec(void(T::*func)(FArgs...), Args&&... args) {
+        // Assuming this modifies the object since there is no output
+        size_t hash = generateHash(m_hash, args...);
+        m_hash = combineHash(hash, fhash);
+        (m_obj.*func)(get(std::forward<Args>(args))...);
+    }
+
+    template<uint32_t fhash, class...FArgs, class...Args>
     typename std::enable_if<OutputPack<void,Args...>::OUTPUT_COUNT != 0>::type exec(void(T::*func)(FArgs...), Args&&... args){
         typedef OutputPack<void,Args...> PackType;
         typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
         size_t hash = generateHash(m_hash, args...);
-        
+        hash = combineHash(hash, fhash);
         std::cout << "Hash: " << hash << std::endl;
         std::shared_ptr<IResult>& result = CacheEngine::instance().getCachedResult(hash);
         if(result){
@@ -352,11 +374,6 @@ template<class T> struct Executor{
         PackType::saveOutputs(results, args...);
         result.reset(new TResult<output_tuple_type>(std::move(results)));
     }
-                                                                      
-  template<uint32_t FHash, class...FArgs, class...Args>
-  typename std::enable_if<OutputPack<void,Args...>::OUTPUT_COUNT == 0>::type exec(void(T::*func)(FArgs...), Args&&... args){
-      (m_obj.*func)(get(std::forward<Args>(args))...);
-  }
     
     template<class... Args>
     void set(void(T::*func)(Args...), Args&&...args){
@@ -366,64 +383,6 @@ template<class T> struct Executor{
 
     T& m_obj;
     std::size_t m_hash = generateHash();
-};
-
-template<class T, class R, class ... FArgs>
-struct ReturnMemberFuncCaller {
-    ReturnMemberFuncCaller(Executor<T>& exec, R(T::*func)(FArgs...)):
-        m_executor(exec),
-        m_func(func){
-    }
-    R operator()(FArgs&&... args){
-        size_t hash = generateHash(m_executor.m_hash, args...);
-
-        std::cout << "Hash : " << hash << std::endl;
-        std::shared_ptr<IResult>& result = CacheEngine::instance().getCachedResult(hash);
-        if (result) {
-            std::shared_ptr<TResult<R>> tresult = std::dynamic_pointer_cast<TResult<R>>(result);
-            if (tresult) {
-                std::cout << "Found result in cache" << std::endl;
-                return std::get<0>(tresult->values);
-            }
-        }
-
-        R ret = (m_executor.m_obj.*func)(get(std::forward<Args>(args))...);
-        result.reset(new TResult<R>(std::forward<R>(ret)));
-        return ret;
-    }
-    Executor<T>& m_executor;
-    R(T::*m_func)(FArgs...);
-};
-
-template<class T, class ... FArgs>
-struct MemberFuncCaller {
-    MemberFuncCaller(Executor<T>& exec, void(T::*func)(FArgs...)) :
-        m_executor(exec),
-        m_func(func) {
-    }
-
-    void operator()(FArgs&&... args) {
-        typedef OutputPack<void, Args...> PackType;
-        typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
-        size_t hash = generateHash(m_executor.m_hash, args...);
-
-        std::cout << "Hash: " << hash << std::endl;
-        std::shared_ptr<IResult>& result = CacheEngine::instance().getCachedResult(hash);
-        if (result) {
-            std::shared_ptr<TResult<output_tuple_type>> tresult = std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
-            if (tresult) {
-                std::cout << "Found result in cache" << std::endl;
-                PackType::setOutputs(tresult->values, args...);
-                return;
-            }
-        }
-        (m_executor.m_obj.*func)(get(std::forward<Args>(args))...);
-        output_tuple_type results;
-        PackType::saveOutputs(results, args...);
-        result.reset(new TResult<output_tuple_type>(std::move(results)));
-    }
-    Executor<T>& m_executor;
-    void(T::*m_func)(FArgs...);
 };
 
 template<class T>
@@ -438,9 +397,16 @@ template<class T, class... Args> HashedInput<T> make_input(Args&&... args){
 template<class T> HashedOutput<T> make_output(T& ref){
     return HashedOutput<T>(ref);
 }
-#define EXEC(func) exec<ct::ctcrc32(#func)>(func)
+#define EXEC(func) exec<ct::ctcrc32(#func)>(func
 
 int main(){
+    std::cout << "Testing OutputPack detection\n";
+    std::cout << OutputPack<void, int>::OUTPUT_COUNT << " == 0\n";
+    std::cout << OutputPack<void, int, int>::OUTPUT_COUNT << " == 0\n";
+    std::cout << OutputPack<void, HashedInput<int>, HashedInput<int>>::OUTPUT_COUNT << " == 0\n";
+    std::cout << OutputPack<void, HashedOutput<int>>::OUTPUT_COUNT << " == 1\n";
+    std::cout << OutputPack<void, HashedOutput<int>, HashedOutput<int>>::OUTPUT_COUNT << " == 2\n";
+
     CacheEngine& ce = CacheEngine::instance();
     (void)ce;
     auto hashed = make_input<int>(5);
@@ -450,28 +416,31 @@ int main(){
     std::cout << exec(bar::foo, 20) << std::endl;
     bar cls;
     auto executor = make_executor(cls);
-    std::cout << executor.exec(&bar::member, hashed) << std::endl;
-    std::cout << executor.exec(&bar::member, hashed) << std::endl;
+    std::cout << executor.EXEC(&bar::member), hashed) << std::endl;
+    std::cout << executor.EXEC(&bar::member), hashed) << std::endl;
     int value1 = 20, value2 = 10;
-    executor.exec(&bar::setter, make_output(value1), make_output(value2));
+    executor.EXEC(&bar::setter), make_output(value1), make_output(value2));
     assert(value1 == 5);
     assert(value2 == 10);
     value1 = 100;
     value2 = 200;
     
-    executor.exec(&bar::setter, make_output(value2), make_output(value1));
+    executor.EXEC(&bar::setter), make_output(value2), make_output(value1));
     assert(value1 == 10);
     assert(value2 == 5);
     
-    executor.exec(&bar::apply, 10, make_output(value1));
-    executor.exec(&bar::apply, 10, make_output(value1));
-    executor.exec(&bar::apply, 5, make_output(value1));
+    executor.EXEC(&bar::apply), 10, make_output(value1));
+    executor.EXEC(&bar::apply), 10, make_output(value1));
+    executor.EXEC(&bar::apply), 5, make_output(value1));
     std::cout << "Testing setters and getters" << std::endl;
-    int ret = executor.exec(&bar::get);
+    int ret = executor.EXEC(&bar::get));
     std::cout << ret << std::endl;
     executor.set(&bar::set, 15);
-    std::cout << executor.exec(&bar::get) << std::endl;
-    std::cout << executor.exec(&bar::get) << std::endl;
+    std::cout << executor.EXEC(&bar::get)) << std::endl;
+    std::cout << executor.EXEC(&bar::get)) << std::endl;
+
+    
+    executor.EXEC(&bar::member2), 0,1);
     //std::cout << exec(&bar::member, &cls, 11) << std::endl;
     return 0;
 }
