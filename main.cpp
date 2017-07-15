@@ -313,7 +313,7 @@ template<class T, class ... Args> struct OutputPack<typename std::enable_if<Outp
 
 template<class T> struct Executor{    
     Executor(T& obj):m_obj(obj){}
-    template<uint32_t FHash, class R, class...FArgs, class... Args>
+    template<class R, class...FArgs, class... Args>
     R exec(R(T::*func)(FArgs...), Args&&... args){
         size_t hash = generateHash(m_hash, args...);
         
@@ -331,7 +331,7 @@ template<class T> struct Executor{
         result.reset(new TResult<R>(std::forward<R>(ret)));
         return ret;
     }
-    template<uint32_t FHash, class...FArgs, class...Args>
+    template<class...FArgs, class...Args>
     typename std::enable_if<OutputPack<void,Args...>::OUTPUT_COUNT != 0>::type exec(void(T::*func)(FArgs...), Args&&... args){
         typedef OutputPack<void,Args...> PackType;
         typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
@@ -374,7 +374,7 @@ struct ReturnMemberFuncCaller {
         m_executor(exec),
         m_func(func){
     }
-    R operator(FArgs&&... args){
+    R operator()(FArgs&&... args){
         size_t hash = generateHash(m_executor.m_hash, args...);
 
         std::cout << "Hash : " << hash << std::endl;
@@ -402,7 +402,7 @@ struct MemberFuncCaller {
         m_func(func) {
     }
 
-    void operator(FArgs&&... args) {
+    void operator()(FArgs&&... args) {
         typedef OutputPack<void, Args...> PackType;
         typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
         size_t hash = generateHash(m_executor.m_hash, args...);
@@ -423,7 +423,7 @@ struct MemberFuncCaller {
         result.reset(new TResult<output_tuple_type>(std::move(results)));
     }
     Executor<T>& m_executor;
-    R(T::*m_func)(FArgs...);
+    void(T::*m_func)(FArgs...);
 };
 
 template<class T>
