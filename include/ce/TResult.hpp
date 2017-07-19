@@ -2,6 +2,7 @@
 #include <ce/IResult.hpp>
 #include <utility>
 
+namespace ce {
 template<class ... T> struct TResult : IResult {
     TResult(std::tuple<T...>&& arg) :
         values(std::move(arg)) {}
@@ -23,3 +24,4 @@ template<class...T> struct TResult<std::tuple<T...>> : IResult {
 
     std::tuple<T...> values;
 };
+}

@@ -1,6 +1,6 @@
 #pragma once
 #include <ce/CacheEngine.hpp>
-
+namespace ce {
 // TODO implement cache lookup for static functions
 template<class R>
 R exec(R(*func)()) {
@@ -11,4 +11,5 @@ R exec(R(*func)()) {
 template<class R, class ... Args>
 R exec(R(*func)(Args...), Args...args) {
     return func(args...);
+}
 }

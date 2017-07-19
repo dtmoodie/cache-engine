@@ -1,7 +1,9 @@
 #pragma once
+#include "export.hpp"
 
-struct IResult {
+namespace ce {
+struct CE_EXPORT IResult {
     virtual ~IResult();
 };
 
-IResult::~IResult() {}
+}

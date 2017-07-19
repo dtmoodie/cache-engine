@@ -1,5 +1,6 @@
 #include <ce/CacheEngine.hpp>
 
+namespace ce{
 static std::unique_ptr<ICacheEngine> g_engine;
 thread_local std::unique_ptr<ICacheEngine> t_engine;
 
@@ -24,4 +25,6 @@ CacheEngine::CacheEngine() {
 
 std::shared_ptr<IResult>& CacheEngine::getCachedResult(size_t hash) {
     return m_result_cache[hash];
+}
+
 }

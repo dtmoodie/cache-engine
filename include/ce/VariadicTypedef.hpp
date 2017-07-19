@@ -1,5 +1,6 @@
 #pragma once
 
+namespace ce {
 template<typename... Args>
 struct variadic_typedef {};
 
@@ -26,3 +27,4 @@ struct append_to_tupple<T, variadic_typedef<Args...> > {
     typedef variadic_typedef<T, Args...> type;
     typedef std::tuple<T, Args...> tuple_type;
 };
+}

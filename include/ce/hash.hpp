@@ -1,5 +1,5 @@
 #pragma once
-
+namespace ce {
 // lolol poormans hash for now
 size_t generateHash() {
     static size_t count = 0;
@@ -36,4 +36,5 @@ std::size_t generateHash(R(T::*func)(FArgs...)) {
 template<class T, class...Args>
 size_t generateHash(std::size_t seed, T&& v, Args&&... args) {
     return generateHash(combineHash(seed, std::forward<T>(v)), std::forward<Args>(args)...);
+}
 }

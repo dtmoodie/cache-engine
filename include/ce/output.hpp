@@ -1,6 +1,6 @@
 #pragma once
 
-
+namespace ce {
 template<class T> struct HashedOutput {
     HashedOutput(HashedOutput<T>&& other) :
         m_ref(other.m_ref) {
@@ -35,3 +35,4 @@ template<class T> T& get(HashedOutput<T>&& data) {
 template<class T> T& get(HashedOutput<T>& data) {
     return data.m_ref;
 }
+} // namespace ce

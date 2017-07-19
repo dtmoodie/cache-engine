@@ -9,9 +9,13 @@
 #include <ct/String.hpp>
 
 #include <type_traits>
-
-template<class T> struct Executor {
-    Executor(T& obj) :m_obj(obj) {}
+namespace ce {
+template<class T, class Derived> struct ExecutorBase: public Derived {
+    template<class ... Args>
+    ExecutorBase(Args&&... args):
+    Derived(std::forward<Args>(args)...){
+    }
+    //Executor(T& obj) :m_obj(obj) {}
 
     template<uint32_t fhash, class R, class...FArgs, class... Args>
     R exec(R(T::*func)(FArgs...), Args&&... args) {
@@ -27,7 +31,7 @@ template<class T> struct Executor {
             }
         }
 
-        R ret = (m_obj.*func)(get(std::forward<Args>(args))...);
+        R ret = (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
         result.reset(new TResult<R>(std::forward<R>(ret)));
         return ret;
     }
@@ -35,7 +39,7 @@ template<class T> struct Executor {
     template<uint32_t fhash, class...FArgs, class... Args>
     typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type exec(void(T::*func)(FArgs...) const, Args&&... args) {
         // no output but it's a const call soooo execute
-        (m_obj.*func)(get(std::forward<Args>(args))...);
+        (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
     }
 
     template<uint32_t fhash, class...FArgs, class... Args>
@@ -43,7 +47,7 @@ template<class T> struct Executor {
         // Assuming this modifies the object since there is no output
         size_t hash = generateHash(m_hash, args...);
         m_hash = combineHash(hash, fhash);
-        (m_obj.*func)(get(std::forward<Args>(args))...);
+        (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
     }
 
     template<uint32_t fhash, class...FArgs, class...Args>
@@ -62,7 +66,7 @@ template<class T> struct Executor {
                 return;
             }
         }
-        (m_obj.*func)(get(std::forward<Args>(args))...);
+        (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
         output_tuple_type results;
         PackType::saveOutputs(results, args...);
         result.reset(new TResult<output_tuple_type>(std::move(results)));
@@ -71,15 +75,22 @@ template<class T> struct Executor {
     template<class... Args>
     void set(void(T::*func)(Args...), Args&&...args) {
         m_hash = generateHash(m_hash, args...);
-        (m_obj.*func)(get(std::forward<Args>(args))...);
+        (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
     }
 
-    T& m_obj;
+    //T& m_obj;
     std::size_t m_hash = generateHash();
 };
 
+template<class T> 
+struct ExecutorRef{
+    ExecutorRef(T& obj) :m_obj(obj) {}
+    T& m_obj;
+};
+
 template<class T>
-Executor<T> make_executor(T& obj) {
-    return Executor<T>(obj);
+ExecutorBase<T, ExecutorRef<T>> make_executor(T& obj) {
+    return ExecutorBase<T, ExecutorRef<T>>(obj);
+}
 }
 #define EXEC(func) exec<ct::ctcrc32(#func)>(func

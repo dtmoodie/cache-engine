@@ -1,4 +1,13 @@
 #pragma once
+namespace ce {
+
+template<class T> T& get(T& data) {
+    return data;
+}
+
+template<class T> T&& get(T&& data) {
+    return std::forward<T>(data);
+}
 
 template<class T> struct HashedInput {
     template<class...Args> HashedInput(Args&&... args) :
@@ -22,4 +31,5 @@ std::size_t combineHash(std::size_t seed, const HashedInput<T>& v) {
 
 template<class T> T& get(HashedInput<T>& data) {
     return data.data;
+}
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include <ce/VariadicTypedef.hpp>
-
+namespace ce {
 template<class Enable, class T, class...Args> struct OutputPack : public OutputPack<void, Args...> {
     enum {
         OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
@@ -21,11 +21,11 @@ template<class T> struct OutputPack<void, HashedOutput<T>> {
 
     template<class TupleType>
     static void setOutputs(TupleType& result, HashedOutput<T>& out) {
-        get(out) = std::get<std::tuple_size<TupleType>::value - 1>(result);
+        ce::get(out) = std::get<std::tuple_size<TupleType>::value - 1>(result);
     }
     template<class TupleType>
     static void saveOutputs(TupleType& result, HashedOutput<T>& out) {
-        std::get<std::tuple_size<TupleType>::value - 1>(result) = get(out);
+        std::get<std::tuple_size<TupleType>::value - 1>(result) = ce::get(out);
     }
 };
 
@@ -37,13 +37,13 @@ template<class T, class ... Args> struct OutputPack<typename std::enable_if<Outp
 
     template<typename TupleType>
     static void setOutputs(TupleType& result, HashedOutput<T>& out, Args&... args) {
-        get(out) = std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT >(result);
+        ce::get(out) = std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT >(result);
         OutputPack<void, Args...>::setOutputs(result, args...);
     }
 
     template<typename TupleType>
     static void saveOutputs(TupleType& result, HashedOutput<T>& out, Args&... args) {
-        std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT >(result) = get(out);
+        std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT >(result) = ce::get(out);
         OutputPack<void, Args...>::saveOutputs(result, args...);
     }
 };
@@ -57,13 +57,13 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
 
     template<class TupleType>
     static void setOutputs(TupleType& result, HashedOutput<T>& out, Args&... args) {
-        get(out) = std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result);
+        ce::get(out) = std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result);
         OutputPack<void, Args...>::setOutputs(result, args...);
     }
 
     template<class TupleType>
     static void saveOutputs(TupleType& result, HashedOutput<T>& out, Args&... args) {
-        std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result) = get(out);
+        std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result) = ce::get(out);
         OutputPack<void, Args...>::saveOutputs(result, args...);
     }
 };
@@ -90,3 +90,4 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
         OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
     };
 };
+}

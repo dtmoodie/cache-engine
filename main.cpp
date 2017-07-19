@@ -5,7 +5,7 @@
 #include <memory>
 #include <map>
 #include <cassert>
-
+using namespace ce;
 
 template<class T, class R, class... Args>
 R exec(R(T::*func)(Args...), T* This, Args... args) {
@@ -60,14 +60,6 @@ struct bar{
 };
 
 
-template<class T> T& get(T& data){
-    return data;
-}
-
-template<class T> T&& get(T&& data){
-    return std::forward<T>(data);
-}
-
 // unfortunately we need to use this macro to deal with not being able to hash member function pointers on windows. :(
 
 
@@ -79,7 +71,7 @@ int main(){
     std::cout << OutputPack<void, HashedOutput<int>>::OUTPUT_COUNT << " == 1\n";
     std::cout << OutputPack<void, HashedOutput<int>, HashedOutput<int>>::OUTPUT_COUNT << " == 2\n";
 
-    CacheEngine& ce = CacheEngine::instance();
+    ICacheEngine& ce = CacheEngine::instance();
     (void)ce;
     auto hashed = make_input<int>(5);
     std::cout << exec(foo1) << std::endl;
