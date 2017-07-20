@@ -32,6 +32,10 @@ std::size_t generateHash(R(T::*func)(FArgs...)) {
     std::hash<R(T::*)(FArgs...)> hasher;
     return hasher(func);
 }
+template<class R, class... FArgs>
+std::size_t generateHash(R(*func)(FArgs...)) {
+    return reinterpret_cast<std::size_t>((void*)func);
+}
 
 template<class T, class...Args>
 size_t generateHash(std::size_t seed, T&& v, Args&&... args) {

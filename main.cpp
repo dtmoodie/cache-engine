@@ -14,11 +14,11 @@ R exec(R(T::*func)(Args...), T* This, Args... args) {
     return (*This.*func)(args...);
 }
 
-int foo1(){
+int foo1(int value){
     return 5;
 }
 
-int foo2(){
+int foo2(int value){
     return 6;
 }
 
@@ -55,7 +55,7 @@ struct bar{
     int get(){
         return m_member;
     }
-    static int staticFunc(){
+    static int staticFunc(int value){
         return 5;
     }
     int m_member = 0;    
@@ -78,11 +78,11 @@ int main(){
     ICacheEngine& ce = CacheEngine::instance();
     (void)ce;
     auto hashed = make_input<int>(5);
-    std::cout << exec(foo1) << std::endl;
-    std::cout << exec(foo2) << std::endl;
+    std::cout << exec(foo1, 0) << std::endl;
+    std::cout << exec(foo2, 0) << std::endl;
     std::cout << exec(foo3, 10) << std::endl;
     std::cout << exec(bar::foo, 20) << std::endl;
-    std::cout << exec(&bar::staticFunc) << std::endl;
+    std::cout << exec(&bar::staticFunc, 0) << std::endl;
     bar cls;
     auto executor = make_executor(cls);
     std::cout << executor.EXEC(&bar::member), hashed) << std::endl;

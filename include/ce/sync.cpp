@@ -33,5 +33,8 @@ namespace ce{
     void EventPool::release(cudaEvent_t ev){
         m_pool.push_back(ev);
     }
-
+    EventPool::EventPtr::EventPtr() :
+        std::shared_ptr<CUevent_st>(EventPool::instance()->request(), [](cudaEvent_t ev) {
+        EventPool::instance()->release(ev);
+    }) {}
 }

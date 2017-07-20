@@ -15,16 +15,14 @@ namespace ce{
         void release(cudaEvent_t ev);
 
         struct CE_EXPORT EventPtr: public std::shared_ptr<CUevent_st>{
-            EventPtr():
-            std::shared_ptr<CUevent_st>(EventPool::instance()->request(), [](cudaEvent_t ev){
-                EventPool::instance()->release(ev);
-            }){}
+            EventPtr();
         };
     private:
         EventPool();
         
         std::list<cudaEvent_t> m_pool;
     };
+
 template<> struct OutputPack<void, cudaStream_t> {
     enum {
         OUTPUT_COUNT = 1
@@ -36,6 +34,7 @@ template<> struct OutputPack<void, cudaStream_t> {
         EventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
         cudaStreamWaitEvent(stream, ev.get(), 0);
     }
+
     template<class TupleType>
     static void saveOutputs(TupleType& result, ::cudaStream_t& stream) {
         if(stream){
@@ -50,17 +49,21 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
     enum {
         OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
     };
-    typedef variadic_typedef<cudaStream_t> types;
+    typedef variadic_typedef<EventPool::EventPtr> types;
 
     template<class TupleType>
-    static void setOutputs(TupleType& result, cudaStream_t& out, Args&... args) {
-        //ce::get(out) = std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result);
+    static void setOutputs(TupleType& result, cudaStream_t& stream, Args&... args) {
+        EventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
+        cudaStreamWaitEvent(stream, ev.get(), 0);
         OutputPack<void, Args...>::setOutputs(result, args...);
     }
 
     template<class TupleType>
-    static void saveOutputs(TupleType& result, cudaStream_t& out, Args&... args) {
-        //std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result) = ce::get(out);
+    static void saveOutputs(TupleType& result, cudaStream_t& stream, Args&... args) {
+        if (stream) {
+            EventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
+            cudaEventRecord(ev.get(), stream);
+        }
         OutputPack<void, Args...>::saveOutputs(result, args...);
     }
 };
