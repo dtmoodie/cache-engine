@@ -1,5 +1,6 @@
 #include <ce/Executor.hpp>
 #include <ce/execute.hpp>
+#include <ce/function_traits.hpp>
 
 #include <iostream>
 #include <memory>
@@ -70,6 +71,8 @@ int main(){
     std::cout << OutputPack<void, HashedInput<int>, HashedInput<int>>::OUTPUT_COUNT << " == 0\n";
     std::cout << OutputPack<void, HashedOutput<int>>::OUTPUT_COUNT << " == 1\n";
     std::cout << OutputPack<void, HashedOutput<int>, HashedOutput<int>>::OUTPUT_COUNT << " == 2\n";
+    static_assert(!ce::function_traits::is_const(&bar::member), "member is non const");
+    static_assert(ce::function_traits::is_const(&bar::member2), "member is const");
 
     ICacheEngine& ce = CacheEngine::instance();
     (void)ce;
