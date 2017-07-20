@@ -20,21 +20,25 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
     
     template<uint32_t fhash, class R, class...FArgs, class... Args>
     R exec(R(T::*func)(FArgs...), Args&&... args) {
-        size_t hash = generateHash(m_hash, args...);
-        hash = combineHash(hash, fhash);
-        std::cout << "Hash : " << hash << std::endl;
-        std::shared_ptr<IResult>& result = ICacheEngine::instance().getCachedResult(hash);
-        if (result) {
-            std::shared_ptr<TResult<R>> tresult = std::dynamic_pointer_cast<TResult<R>>(result);
-            if (tresult) {
-                std::cout << "Found result in cache" << std::endl;
-                return std::get<0>(tresult->values);
+        ICacheEngine* eng = ICacheEngine::instance();
+        if(eng){
+            size_t hash = generateHash(m_hash, args...);
+            hash = combineHash(hash, fhash);
+            std::cout << "Hash : " << hash << std::endl;
+            std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
+            if (result) {
+                std::shared_ptr<TResult<R>> tresult = std::dynamic_pointer_cast<TResult<R>>(result);
+                if (tresult) {
+                    std::cout << "Found result in cache" << std::endl;
+                    return std::get<0>(tresult->values);
+                }
             }
-        }
 
-        R ret = (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
-        result.reset(new TResult<R>(std::forward<R>(ret)));
-        return ret;
+            R ret = (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
+            result.reset(new TResult<R>(std::forward<R>(ret)));
+            return ret;
+        }
+        return (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
     }
 
     template<uint32_t fhash, class...FArgs, class... Args>
@@ -46,31 +50,36 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
     template<uint32_t fhash, class...FArgs, class... Args>
     typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT == 0>::type exec(void(T::*func)(FArgs...), Args&&... args) {
         // Assuming this modifies the object since there is no output
-        size_t hash = generateHash(m_hash, args...);
-        m_hash = combineHash(hash, fhash);
+        //size_t hash = generateHash(m_hash, args...);
+        //m_hash = combineHash(hash, fhash);
         (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
     }
 
     template<uint32_t fhash, class...FArgs, class...Args>
     typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(T::*func)(FArgs...), Args&&... args) {
-        typedef OutputPack<void, std::decay_t<Args>...> PackType;
-        typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
-        size_t hash = generateHash(m_hash, args...);
-        hash = combineHash(hash, fhash);
-        std::cout << "Hash: " << hash << std::endl;
-        std::shared_ptr<IResult>& result = ICacheEngine::instance().getCachedResult(hash);
-        if (result) {
-            std::shared_ptr<TResult<output_tuple_type>> tresult = std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
-            if (tresult) {
-                std::cout << "Found result in cache" << std::endl;
-                PackType::setOutputs(tresult->values, args...);
-                return;
+        ICacheEngine* eng = ICacheEngine::instance();
+        if(eng){
+            typedef OutputPack<void, std::decay_t<Args>...> PackType;
+            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
+            size_t hash = generateHash(m_hash, args...);
+            hash = combineHash(hash, fhash);
+            std::cout << "Hash: " << hash << std::endl;
+            std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
+            if (result) {
+                std::shared_ptr<TResult<output_tuple_type>> tresult = std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
+                if (tresult) {
+                    std::cout << "Found result in cache" << std::endl;
+                    PackType::setOutputs(tresult->values, args...);
+                    return;
+                }
             }
+            (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
+            output_tuple_type results;
+            PackType::saveOutputs(results, args...);
+            result.reset(new TResult<output_tuple_type>(std::move(results)));
+        }else{
+            (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
         }
-        (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
-        output_tuple_type results;
-        PackType::saveOutputs(results, args...);
-        result.reset(new TResult<output_tuple_type>(std::move(results)));
     }
 
     template<class... Args>

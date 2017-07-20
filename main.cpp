@@ -75,9 +75,9 @@ int main(){
     static_assert(!ce::function_traits::is_const(&bar::member), "member is non const");
     static_assert(ce::function_traits::is_const(&bar::member2), "member is const");
 
-    ICacheEngine& ce = CacheEngine::instance();
-    (void)ce;
+    ICacheEngine::setEngine(std::make_unique<CacheEngine>());
     auto hashed = make_input<int>(5);
+    std::cout << exec(foo1, 0) << std::endl;
     std::cout << exec(foo1, 0) << std::endl;
     std::cout << exec(foo2, 0) << std::endl;
     std::cout << exec(foo3, 10) << std::endl;

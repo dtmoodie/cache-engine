@@ -4,13 +4,13 @@ namespace ce{
 static std::unique_ptr<ICacheEngine> g_engine;
 thread_local std::unique_ptr<ICacheEngine> t_engine;
 
-ICacheEngine& ICacheEngine::instance() {
+ICacheEngine* ICacheEngine::instance() {
     if(t_engine)
-        return *t_engine;
-    if(!g_engine){
+        return t_engine.get();
+    /*if(!g_engine){
         g_engine.reset(new CacheEngine());
-    }
-    return *g_engine;
+    }*/
+    return g_engine.get();
 }
 
 void ICacheEngine::setEngine(std::unique_ptr<ICacheEngine>&& engine, bool is_thread_local){
