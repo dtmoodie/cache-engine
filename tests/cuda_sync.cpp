@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
             auto input = ce::make_input<cv::cuda::GpuMat>(h_img);
             cv::cuda::GpuMat output;
             
-            ce::exec(cv::cuda::cvtColor, input, ce::make_output(output), cv::COLOR_BGR2GRAY, -1, stream1);
+            //ce::exec(cv::cuda::cvtColor, input, ce::make_output(output), cv::COLOR_BGR2GRAY, -1, stream1);
             //ce::exec(cv::cuda::cvtColor, input, ce::make_output(output), cv::COLOR_BGR2GRAY, -1, stream2);
             
         }
