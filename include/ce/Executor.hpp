@@ -15,8 +15,7 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
     ExecutorBase(Args&&... args):
     Derived(std::forward<Args>(args)...){
     }
-    //Executor(T& obj) :m_obj(obj) {}
-
+    
     template<uint32_t fhash, class R, class...FArgs, class... Args>
     R exec(R(T::*func)(FArgs...), Args&&... args) {
         size_t hash = generateHash(m_hash, args...);
@@ -78,7 +77,6 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
         (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
     }
 
-    //T& m_obj;
     std::size_t m_hash = generateHash();
 };
 
@@ -89,8 +87,25 @@ struct ExecutorRef{
 };
 
 template<class T>
+struct ExecutorOwner{
+    template<class... Args>
+    ExecutorOwner(Args&&... args):
+        m_obj(std::foward<Args>(args)...){
+    }
+
+    T m_obj;
+};
+
+template<class T>
 ExecutorBase<T, ExecutorRef<T>> make_executor(T& obj) {
     return ExecutorBase<T, ExecutorRef<T>>(obj);
 }
+
+template<class T, class ... Args>
+ExecutorBase<T, ExecutorOwner<T>> make_executor(Args&&... args){
+    return ExecutorBase<T, ExecutorOwner<T>>(std::forward<Args>(args)...);
+
+}
+
 }
 #define EXEC(func) exec<ct::ctcrc32(#func)>(func
