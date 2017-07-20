@@ -9,6 +9,8 @@
 #include <ct/String.hpp>
 
 #include <type_traits>
+#include <iostream>
+
 namespace ce {
 template<class T, class Derived> struct ExecutorBase: public Derived {
     template<class ... Args>
@@ -36,13 +38,13 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
     }
 
     template<uint32_t fhash, class...FArgs, class... Args>
-    typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type exec(void(T::*func)(FArgs...) const, Args&&... args) {
+    typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT == 0>::type exec(void(T::*func)(FArgs...) const, Args&&... args) {
         // no output but it's a const call soooo execute
         (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
     }
 
     template<uint32_t fhash, class...FArgs, class... Args>
-    typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type exec(void(T::*func)(FArgs...), Args&&... args) {
+    typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT == 0>::type exec(void(T::*func)(FArgs...), Args&&... args) {
         // Assuming this modifies the object since there is no output
         size_t hash = generateHash(m_hash, args...);
         m_hash = combineHash(hash, fhash);
@@ -50,8 +52,8 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
     }
 
     template<uint32_t fhash, class...FArgs, class...Args>
-    typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT != 0>::type exec(void(T::*func)(FArgs...), Args&&... args) {
-        typedef OutputPack<void, Args...> PackType;
+    typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(T::*func)(FArgs...), Args&&... args) {
+        typedef OutputPack<void, std::decay_t<Args>...> PackType;
         typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
         size_t hash = generateHash(m_hash, args...);
         hash = combineHash(hash, fhash);
@@ -90,7 +92,7 @@ template<class T>
 struct ExecutorOwner{
     template<class... Args>
     ExecutorOwner(Args&&... args):
-        m_obj(std::foward<Args>(args)...){
+        m_obj(std::forward<Args>(args)...){
     }
 
     T m_obj;

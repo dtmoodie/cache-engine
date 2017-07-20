@@ -1,11 +1,22 @@
 cmake_minimum_required(VERSION 2.8)
 list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
 
+FIND_PACKAGE(CUDA QUIET)
+
 FILE(GLOB_RECURSE hdr "include/ce/*.hpp")
 FILE(GLOB_RECURSE src "include/ce/*.cpp")
 
 ADD_LIBRARY(ce SHARED ${hdr} ${src})
 TARGET_INCLUDE_DIRECTORIES(ce PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
+IF(CUDA_FOUND)
+  TARGET_INCLUDE_DIRECTORIES(ce PUBLIC $<BUILD_INTERFACE:${CUDA_INCLUDE_DIRS}>)
+  TARGET_LINK_LIBRARIES(ce ${CUDA_CUDART_LIBRARY})
+ENDIF()
 
 add_executable(main main.cpp)
 TARGET_LINK_LIBRARIES(main ce)
+
+IF(CUDA_FOUND)
+  cuda_add_executable(cuda_sync_test tests/cuda_sync.cu tests/cuda_sync.cpp)
+  TARGET_LINK_LIBRARIES(cuda_sync_test ce)
+ENDIF()

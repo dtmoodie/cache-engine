@@ -1,5 +1,7 @@
 #pragma once
 #include <ce/VariadicTypedef.hpp>
+#include <ce/output.hpp>
+
 namespace ce {
 template<class Enable, class T, class...Args> struct OutputPack : public OutputPack<void, Args...> {
     enum {
@@ -90,4 +92,5 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
         OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
     };
 };
+
 }

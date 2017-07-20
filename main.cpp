@@ -1,6 +1,7 @@
 #include <ce/Executor.hpp>
 #include <ce/execute.hpp>
 #include <ce/function_traits.hpp>
+#include <ce/utils.hpp>
 
 #include <iostream>
 #include <memory>
