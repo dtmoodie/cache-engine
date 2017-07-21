@@ -11,7 +11,7 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
         size_t hash = generateHash(func);
         hash = generateHash(hash, std::forward<Args>(args)...);
         std::cout << "Hash: " << hash << std::endl;
-        std::shared_ptr<IResult>& result = ICacheEngine::instance().getCachedResult(hash);
+        std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
         if (result) {
             std::shared_ptr<TResult<output_tuple_type>> tresult = std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
             if (tresult) {
