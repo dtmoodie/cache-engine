@@ -26,7 +26,7 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
                 std::cout << "Found result in cache" << std::endl;
                 setCacheUsedLast(true);
 #endif
-                PackType::setOutputs(tresult->values, args...);
+                PackType::setOutputs(hash, tresult->values, args...);
                 return;
             }
         }

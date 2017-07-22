@@ -27,7 +27,8 @@ namespace ce{
         typedef variadic_typedef<CvEventPool::EventPtr> types;
 
         template<class TupleType>
-        static void setOutputs(TupleType& result, cv::cuda::Stream& stream) {
+        static void setOutputs(size_t hash,TupleType& result, cv::cuda::Stream& stream) {
+            (void)hash;
             CvEventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
             stream.waitEvent(*ev);
         }

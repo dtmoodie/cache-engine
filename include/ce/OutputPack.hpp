@@ -22,7 +22,7 @@ template<class T> struct OutputPack<void, HashedOutput<T>> {
     typedef variadic_typedef<std::decay_t<T>> types;
 
     template<class TupleType>
-    static void setOutputs(TupleType& result, HashedOutput<T>& out) {
+    static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out) {
         ce::get(out) = std::get<std::tuple_size<TupleType>::value - 1>(result);
     }
     template<class TupleType>
@@ -38,9 +38,10 @@ template<class T, class ... Args> struct OutputPack<typename std::enable_if<Outp
     typedef typename append_to_tupple<std::decay_t<T>, typename OutputPack<void, Args...>::types>::type types;
 
     template<typename TupleType>
-    static void setOutputs(TupleType& result, HashedOutput<T>& out, Args&... args) {
+    static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args) {
         ce::get(out) = std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT >(result);
-        OutputPack<void, Args...>::setOutputs(result, args...);
+        out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OUTPUT_COUNT);
+        OutputPack<void, Args...>::setOutputs(hash, result, args...);
     }
 
     template<typename TupleType>
@@ -58,9 +59,10 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
     typedef variadic_typedef<T> types;
 
     template<class TupleType>
-    static void setOutputs(TupleType& result, HashedOutput<T>& out, Args&... args) {
+    static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args) {
         ce::get(out) = std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result);
-        OutputPack<void, Args...>::setOutputs(result, args...);
+        out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1);
+        OutputPack<void, Args...>::setOutputs(hash, result, args...);
     }
 
     template<class TupleType>
@@ -78,8 +80,8 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
     typedef typename OutputPack<void, Args...>::types types;
     typedef typename convert_in_tuple<types>::type TupleType;
 
-    static void setOutputs(TupleType& result, T&, Args&... args) {
-        OutputPack<void, Args...>::setOutputs(result, args...);
+    static void setOutputs(size_t hash, TupleType& result, T&, Args&... args) {
+        OutputPack<void, Args...>::setOutputs(hash, result, args...);
     }
     static void saveOutputs(TupleType& result, T&, Args&... args) {
         OutputPack<void, Args...>::saveOutputs(result, args...);

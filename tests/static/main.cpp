@@ -73,21 +73,27 @@ BOOST_AUTO_TEST_CASE(test_foo3) {
 
 BOOST_AUTO_TEST_CASE(test_foo4) {
     double result1, result2 = 0.0;
-    ce::exec(foo4, 2,3,4, ce::make_output(result1));
+    auto out1 = ce::make_output(result1);
+    ce::exec(foo4, 2,3,4, out1);
     foo4(2,3,4, result2);
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
-    ce::exec(foo4, 5, 6, 7, ce::make_output(result1));
+    auto out2 = ce::make_output(result1);
+    ce::exec(foo4, 5, 6, 7, out2);
     foo4(5, 6, 7, result2);
     BOOST_REQUIRE_EQUAL(result1, result2); 
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
     // Get cached results
-    ce::exec(foo4, 2, 3, 4, ce::make_output(result1));
+    auto out3 = ce::make_output(result1);
+    ce::exec(foo4, 2, 3, 4, out3);
     foo4(2, 3, 4, result2);
+    BOOST_REQUIRE_EQUAL(out1.m_hash, out2.m_hash);
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
-    ce::exec(foo4, 5, 6, 7, ce::make_output(result1));
+    auto out4 = ce::make_output(result1);
+    ce::exec(foo4, 5, 6, 7, out4);
     foo4(5, 6, 7, result2);
+    BOOST_REQUIRE_EQUAL(out2.m_hash, out4.m_hash);
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
 }

@@ -69,7 +69,7 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
                 std::shared_ptr<TResult<output_tuple_type>> tresult = std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
                 if (tresult) {
                     std::cout << "Found result in cache" << std::endl;
-                    PackType::setOutputs(tresult->values, args...);
+                    PackType::setOutputs(hash, tresult->values, args...);
                     return;
                 }
             }

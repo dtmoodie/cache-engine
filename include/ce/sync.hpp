@@ -30,7 +30,8 @@ template<> struct OutputPack<void, cudaStream_t> {
     typedef variadic_typedef<EventPool::EventPtr> types;
 
     template<class TupleType>
-    static void setOutputs(TupleType& result, ::cudaStream_t& stream) {
+    static void setOutputs(size_t hash, TupleType& result, ::cudaStream_t& stream) {
+        (void)hash;
         EventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
         cudaStreamWaitEvent(stream, ev.get(), 0);
     }
@@ -52,7 +53,8 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
     typedef variadic_typedef<EventPool::EventPtr> types;
 
     template<class TupleType>
-    static void setOutputs(TupleType& result, cudaStream_t& stream, Args&... args) {
+    static void setOutputs(size_t hash, TupleType& result, cudaStream_t& stream, Args&... args) {
+        (void)hash;
         EventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
         cudaStreamWaitEvent(stream, ev.get(), 0);
         OutputPack<void, Args...>::setOutputs(result, args...);
