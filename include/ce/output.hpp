@@ -1,5 +1,5 @@
 #pragma once
-
+#include <iostream>
 namespace ce {
 
 template<class T> 
@@ -14,15 +14,26 @@ struct HashedOutput {
 
     }
 
-    HashedOutput(T& ref) :
+    HashedOutput(T ref) :
         m_ref(ref) {}
 
-    T& m_ref;
+    HashedOutput(T& value, size_t hash):
+        m_ref(value), m_hash(hash){}
+    operator T&() {return m_ref;}
+    operator const T&() const {return m_ref;}
+    T m_ref;
+    size_t m_hash = 0;
 };
 
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const HashedOutput<T>& value){
+    os << value.m_ref << ':' << value.m_hash;
+    return os;
+}
+
 template<class T> 
-HashedOutput<T> make_output(T& ref) {
-    return HashedOutput<T>(ref);
+HashedOutput<T&> make_output(T& ref) {
+    return HashedOutput<T&>(ref);
 }
 
 template<class T>

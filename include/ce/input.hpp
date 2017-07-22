@@ -1,4 +1,5 @@
 #pragma once
+#include <ce/output.hpp>
 namespace ce {
 
 template<class T> T& get(T& data) {
@@ -14,13 +15,31 @@ template<class T> struct HashedInput {
         data(std::forward<Args>(args)...) {
         hash = generateHash();
     }
-
+    operator T&() { return data; }
+    operator const T&() const { return data; }
     size_t hash;
     T data;
 };
 
+
 template<class T, class... Args> HashedInput<T> make_input(Args&&... args) {
     return HashedInput<T>(std::forward<Args>(args)...);
+}
+
+template<class T> HashedInput<T&> wrap_input(T& data){
+    return HashedInput<T&>(data);
+}
+
+template<class T> HashedInput<T&> make_input(HashedOutput<T>& output) {
+    HashedInput<T&> ret(output.m_ref);
+    ret.hash = output.m_hash;
+    return ret;
+}
+
+template<class T> HashedInput<T&> make_input(HashedOutput<T>&& output){
+    HashedInput<T&> ret(output.m_ref);
+    ret.hash = output.m_hash;
+    return ret;
 }
 
 template<class T>

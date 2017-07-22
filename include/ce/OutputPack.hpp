@@ -19,7 +19,7 @@ template<class T> struct OutputPack<void, HashedOutput<T>> {
     enum {
         OUTPUT_COUNT = 1
     };
-    typedef variadic_typedef<T> types;
+    typedef variadic_typedef<std::decay_t<T>> types;
 
     template<class TupleType>
     static void setOutputs(TupleType& result, HashedOutput<T>& out) {
@@ -35,7 +35,7 @@ template<class T, class ... Args> struct OutputPack<typename std::enable_if<Outp
     enum {
         OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
     };
-    typedef typename append_to_tupple<T, typename OutputPack<void, Args...>::types>::type types;
+    typedef typename append_to_tupple<std::decay_t<T>, typename OutputPack<void, Args...>::types>::type types;
 
     template<typename TupleType>
     static void setOutputs(TupleType& result, HashedOutput<T>& out, Args&... args) {
