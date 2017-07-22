@@ -37,7 +37,8 @@ template<> struct OutputPack<void, cudaStream_t> {
     }
 
     template<class TupleType>
-    static void saveOutputs(TupleType& result, ::cudaStream_t& stream) {
+    static void saveOutputs(size_t hash, TupleType& result, ::cudaStream_t& stream) {
+        (void)hash;
         if(stream){
             EventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
             cudaEventRecord(ev.get(), stream);
@@ -54,19 +55,18 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
 
     template<class TupleType>
     static void setOutputs(size_t hash, TupleType& result, cudaStream_t& stream, Args&... args) {
-        (void)hash;
         EventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
         cudaStreamWaitEvent(stream, ev.get(), 0);
-        OutputPack<void, Args...>::setOutputs(result, args...);
+        OutputPack<void, Args...>::setOutputs(hash, result, args...);
     }
 
     template<class TupleType>
-    static void saveOutputs(TupleType& result, cudaStream_t& stream, Args&... args) {
+    static void saveOutputs(size_t hash,TupleType& result, cudaStream_t& stream, Args&... args) {
         if (stream) {
             EventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
             cudaEventRecord(ev.get(), stream);
         }
-        OutputPack<void, Args...>::saveOutputs(result, args...);
+        OutputPack<void, Args...>::saveOutputs(hash, result, args...);
     }
 };
 

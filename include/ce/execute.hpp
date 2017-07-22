@@ -35,7 +35,7 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
 #endif
         func(ce::get(std::forward<Args>(args))...);
         output_tuple_type results;
-        PackType::saveOutputs(results, args...);
+        PackType::saveOutputs(hash, results, args...);
         result.reset(new TResult<output_tuple_type>(std::move(results)));
     }else{
 #ifdef CE_DEBUG_CACHE_USAGE 
@@ -46,7 +46,7 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
 }
 
 template<class R, class ... FArgs, class... Args>
-typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT != 0>::type exec(R(*func)(FArgs...), Args&&...args) {
+typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT != 0, HashedOutput<R>>::type exec(R(*func)(FArgs...), Args&&...args) {
     ICacheEngine* eng = ICacheEngine::instance();
     if(eng){
         typedef OutputPack<void, R, std::decay_t<Args>...> PackType;
@@ -64,8 +64,9 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
                 std::cout << "Found result in cache" << std::endl;
                 setCacheUsedLast(true);
 #endif
-                PackType::setOutputs(tresult->values, args...);
-                return HashedOutput<R>(std::get<0>(tresult->values), hash);
+                R ret;
+                PackType::setOutputs(hash, tresult->values, ret, args...);
+                return HashedOutput<R>(ret, hash);
             }
         }
 #ifdef CE_DEBUG_CACHE_USAGE 
@@ -73,14 +74,15 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
 #endif
         R ret = func(ce::get(std::forward<Args>(args))...);
         output_tuple_type results;
-        PackType::saveOutputs(results, ret, args...);
+        PackType::saveOutputs(hash, results, ret, args...);
         result.reset(new TResult<output_tuple_type>(std::move(results)));
         return HashedOutput<R>(ret, hash);
     }
 #ifdef CE_DEBUG_CACHE_USAGE 
     setCacheUsedLast(false);
 #endif
-    return HashedOutput<R>(func(ce::get(std::forward<Args>(args))...), 0);
+    R ret = func(ce::get(std::forward<Args>(args))...);
+    return HashedOutput<R>(ret, 0);
 }
 
 template<class R, class ... FArgs, class... Args>

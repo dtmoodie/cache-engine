@@ -75,7 +75,7 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
             }
             (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
-            PackType::saveOutputs(results, args...);
+            PackType::saveOutputs(hash, results, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
         }else{
             (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);

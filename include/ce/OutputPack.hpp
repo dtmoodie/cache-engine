@@ -24,10 +24,12 @@ template<class T> struct OutputPack<void, HashedOutput<T>> {
     template<class TupleType>
     static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out) {
         ce::get(out) = std::get<std::tuple_size<TupleType>::value - 1>(result);
+        out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
     }
     template<class TupleType>
-    static void saveOutputs(TupleType& result, HashedOutput<T>& out) {
+    static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out) {
         std::get<std::tuple_size<TupleType>::value - 1>(result) = ce::get(out);
+        out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
     }
 };
 
@@ -45,9 +47,10 @@ template<class T, class ... Args> struct OutputPack<typename std::enable_if<Outp
     }
 
     template<typename TupleType>
-    static void saveOutputs(TupleType& result, HashedOutput<T>& out, Args&... args) {
+    static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args) {
         std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT >(result) = ce::get(out);
-        OutputPack<void, Args...>::saveOutputs(result, args...);
+        out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OUTPUT_COUNT);
+        OutputPack<void, Args...>::saveOutputs(hash, result, args...);
     }
 };
 
@@ -66,9 +69,10 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
     }
 
     template<class TupleType>
-    static void saveOutputs(TupleType& result, HashedOutput<T>& out, Args&... args) {
+    static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args) {
         std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result) = ce::get(out);
-        OutputPack<void, Args...>::saveOutputs(result, args...);
+        out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1);
+        OutputPack<void, Args...>::saveOutputs(hash, result, args...);
     }
 };
 
@@ -83,8 +87,8 @@ struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUN
     static void setOutputs(size_t hash, TupleType& result, T&, Args&... args) {
         OutputPack<void, Args...>::setOutputs(hash, result, args...);
     }
-    static void saveOutputs(TupleType& result, T&, Args&... args) {
-        OutputPack<void, Args...>::saveOutputs(result, args...);
+    static void saveOutputs(size_t hash, TupleType& result, T&, Args&... args) {
+        OutputPack<void, Args...>::saveOutputs(hash, result, args...);
     }
 };
 

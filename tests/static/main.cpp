@@ -31,6 +31,12 @@ void foo4(double a, double x, double b, double& y){
     y = a * x + b;
 }
 
+double foo5(int value1, int value2, double& out1, double& out2){
+    out1 = value1 * value2;
+    out2 = value1 + value2;
+    return out1 + out2;
+}
+
 BOOST_AUTO_TEST_CASE(initialize){
     ce::ICacheEngine::setEngine(ce::ICacheEngine::create());
 }
@@ -78,18 +84,22 @@ BOOST_AUTO_TEST_CASE(test_foo4) {
     foo4(2,3,4, result2);
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
+
     auto out2 = ce::make_output(result1);
     ce::exec(foo4, 5, 6, 7, out2);
     foo4(5, 6, 7, result2);
     BOOST_REQUIRE_EQUAL(result1, result2); 
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
+    BOOST_REQUIRE_NE(out1.m_hash, out2.m_hash);
+
     // Get cached results
     auto out3 = ce::make_output(result1);
     ce::exec(foo4, 2, 3, 4, out3);
     foo4(2, 3, 4, result2);
-    BOOST_REQUIRE_EQUAL(out1.m_hash, out2.m_hash);
+    BOOST_REQUIRE_EQUAL(out1.m_hash, out3.m_hash);
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
+
     auto out4 = ce::make_output(result1);
     ce::exec(foo4, 5, 6, 7, out4);
     foo4(5, 6, 7, result2);
@@ -110,6 +120,23 @@ BOOST_AUTO_TEST_CASE(test_chain){
     auto result4 = ce::exec(foo3, ce::make_input(result3), 4, 5);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
     BOOST_REQUIRE_EQUAL(result2.m_hash, result4.m_hash);
+}
+
+BOOST_AUTO_TEST_CASE(test_multi_out){
+    double val1 = 0.0;
+    double val2 = 0.0;
+    auto out1 = ce::make_output(val1);
+    auto out2 = ce::make_output(val2);
+    auto ret1 = ce::exec(foo5, 4,5, out1, out2);
+    BOOST_REQUIRE_NE(out1.m_hash, out2.m_hash);
+    BOOST_REQUIRE_NE(out1.m_hash, ret1.m_hash);
+    
+    auto out3 = ce::make_output(val1);
+    auto out4 = ce::make_output(val2);
+    auto ret2 = ce::exec(foo5, 4, 5, out3, out4);
+    BOOST_REQUIRE_EQUAL(out3.m_hash, out1.m_hash);
+    BOOST_REQUIRE_EQUAL(out4.m_hash, out2.m_hash);
+    BOOST_REQUIRE_EQUAL(ret1.m_hash, ret2.m_hash);
 }
 
 

@@ -34,7 +34,8 @@ namespace ce{
         }
 
         template<class TupleType>
-        static void saveOutputs(TupleType& result, cv::cuda::Stream& stream) {
+        static void saveOutputs(size_t hash, TupleType& result, cv::cuda::Stream& stream) {
+            (void)hash;
             if (stream) {
                 CvEventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
                 ev->record(stream);
