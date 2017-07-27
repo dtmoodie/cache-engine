@@ -53,7 +53,7 @@ namespace ce {
 		enum {
 			OUTPUT_COUNT = 1
 		};
-		typedef variadic_typedef<T> types;
+		typedef variadic_typedef<std::decay_t<T>> types;
 
 		template<class TupleType>
 		static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args) {

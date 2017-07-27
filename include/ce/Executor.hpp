@@ -56,10 +56,10 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
     }
 
     template<uint32_t fhash, class...FArgs, class...Args>
-    typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(T::*func)(FArgs...), Args&&... args) {
+    typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(T::*func)(FArgs...), Args&&... args) {
         ICacheEngine* eng = ICacheEngine::instance();
         if(eng){
-            typedef OutputPack<void, std::decay_t<Args>...> PackType;
+            typedef OutputPack<void, std::remove_reference_t<Args>...> PackType;
             typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
             size_t hash = generateHash(m_hash, args...);
             hash = combineHash(hash, fhash);
@@ -78,6 +78,34 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
             PackType::saveOutputs(hash, results, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
         }else{
+            (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
+        }
+    }
+
+    template<uint32_t fhash, class...FArgs, class...Args>
+    typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(T::*func)(FArgs...) const, Args&&... args) {
+        ICacheEngine* eng = ICacheEngine::instance();
+        if (eng) {
+            typedef OutputPack<void, std::decay_t<Args>...> PackType;
+            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
+            size_t hash = generateHash(m_hash, args...);
+            hash = combineHash(hash, fhash);
+            std::cout << "Hash: " << hash << std::endl;
+            std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
+            if (result) {
+                std::shared_ptr<TResult<output_tuple_type>> tresult = std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
+                if (tresult) {
+                    std::cout << "Found result in cache" << std::endl;
+                    PackType::setOutputs(hash, tresult->values, args...);
+                    return;
+                }
+            }
+            (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
+            output_tuple_type results;
+            PackType::saveOutputs(hash, results, args...);
+            result.reset(new TResult<output_tuple_type>(std::move(results)));
+        }
+        else {
             (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
         }
     }
@@ -116,6 +144,13 @@ template<class T, class ... Args>
 ExecutorBase<T, ExecutorOwner<T>> make_executor(Args&&... args){
     return ExecutorBase<T, ExecutorOwner<T>>(std::forward<Args>(args)...);
 
+}
+
+template<class T>
+ExecutorBase<T, ExecutorRef<T>> make_executor(HashedOutput<T&>& obj){
+    ExecutorBase<T, ExecutorRef<T>> ret(obj.m_ref);
+    ret.m_hash = obj.m_hash;
+    return ret;
 }
 
 }
