@@ -8,10 +8,10 @@
 namespace ce {
 
 template<class ... FArgs, class... Args>
-typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(*func)(FArgs...), Args&&...args) {
+typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(*func)(FArgs...), Args&&...args) {
     ICacheEngine* eng = ICacheEngine::instance();
     if(eng){
-        typedef OutputPack<void, std::decay_t<Args>...> PackType;
+        typedef OutputPack<void, std::remove_reference_t<Args>...> PackType;
         typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
         size_t hash = generateHash(func);
         hash = generateHash(hash, std::forward<Args>(args)...);
@@ -46,10 +46,10 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
 }
 
 template<class R, class ... FArgs, class... Args>
-typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT != 0, HashedOutput<R>>::type exec(R(*func)(FArgs...), Args&&...args) {
+typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0, HashedOutput<R>>::type exec(R(*func)(FArgs...), Args&&...args) {
     ICacheEngine* eng = ICacheEngine::instance();
     if(eng){
-        typedef OutputPack<void, R, std::decay_t<Args>...> PackType;
+        typedef OutputPack<void, HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
         typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
         size_t hash = generateHash(func);
         hash = generateHash(hash, std::forward<Args>(args)...);
@@ -64,9 +64,9 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
                 std::cout << "Found result in cache" << std::endl;
                 setCacheUsedLast(true);
 #endif
-                R ret;
+                HashedOutput<R> ret;
                 PackType::setOutputs(hash, tresult->values, ret, args...);
-                return HashedOutput<R>(ret, hash);
+                return ret;
             }
         }
 #ifdef CE_DEBUG_CACHE_USAGE 
@@ -74,9 +74,10 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
 #endif
         R ret = func(ce::get(std::forward<Args>(args))...);
         output_tuple_type results;
-        PackType::saveOutputs(hash, results, ret, args...);
+		HashedOutput<R> out(ret, hash);
+        PackType::saveOutputs(hash, results, out, args...);
         result.reset(new TResult<output_tuple_type>(std::move(results)));
-        return HashedOutput<R>(ret, hash);
+		return out;
     }
 #ifdef CE_DEBUG_CACHE_USAGE 
     setCacheUsedLast(false);
@@ -86,7 +87,7 @@ typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT !=
 }
 
 template<class R, class ... FArgs, class... Args>
-typename std::enable_if<OutputPack<void, std::decay_t<Args>...>::OUTPUT_COUNT == 0, ce::HashedOutput<R>>::type exec(R(*func)(FArgs...), Args&&...args) {
+typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0, ce::HashedOutput<R>>::type exec(R(*func)(FArgs...), Args&&...args) {
     ICacheEngine* eng = ICacheEngine::instance();
     if (eng) {
         size_t hash = generateHash(func);

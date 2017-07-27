@@ -6,6 +6,11 @@
 #include <opencv2/core/cuda.hpp>
 
 namespace ce{
+	
+	std::size_t combineHash(std::size_t seed, const cv::cuda::Stream& v) {
+		(void)v;
+		return seed;
+	}
     struct CE_EXPORT CvEventPool {
         ~CvEventPool();
         static CvEventPool* instance();
@@ -35,11 +40,11 @@ namespace ce{
 
         template<class TupleType>
         static void saveOutputs(size_t hash, TupleType& result, cv::cuda::Stream& stream) {
-            /*(void)hash;
+            (void)hash;
             if (stream) {
                 CvEventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
                 ev->record(stream);
-            }*/
+            }
         }
     };
 }

@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
+
+if(NOT MSVC)
 list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
+endif()
 
 FIND_PACKAGE(CUDA QUIET)
 FIND_PACKAGE(OpenCV QUIET COMPONENTS core cudaimgproc cudaarithm cudawarping imgcodecs)
@@ -10,6 +13,10 @@ FILE(GLOB_RECURSE src "include/ce/*.cpp")
 ADD_LIBRARY(ce SHARED ${hdr} ${src})
 TARGET_INCLUDE_DIRECTORIES(ce PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 TARGET_INCLUDE_DIRECTORIES(ce PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/external/ct/include>)
+
+file(GLOB_RECURSE ct_hdrs ${CMAKE_CURRENT_LIST_DIR}/external/ct/include/*.hpp)
+add_custom_target(ct SOURCES ${ct_hdrs})
+
 IF(CUDA_FOUND)
   TARGET_INCLUDE_DIRECTORIES(ce PUBLIC $<BUILD_INTERFACE:${CUDA_INCLUDE_DIRS}>)
   TARGET_LINK_LIBRARIES(ce ${CUDA_CUDART_LIBRARY})
@@ -29,6 +36,11 @@ IF(CUDA_FOUND)
   cuda_add_executable(cuda_sync_test ${src})
   TARGET_LINK_LIBRARIES(cuda_sync_test ce)
 ENDIF()
+
+if(OpenCV_FOUND)
+	add_executable(opencv_sync_test "tests/opencv/main.cpp")
+	TARGET_LINK_LIBRARIES(opencv_sync_test ce)
+endif()
 
 find_package(Boost QUIET COMPONENTS unit_test_framework)
 if(Boost_UNIT_TEST_FRAMEWORK_FOUND)

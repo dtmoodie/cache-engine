@@ -64,7 +64,6 @@ struct bar{
 
 // unfortunately we need to use this macro to deal with not being able to hash member function pointers on windows. :(
 
-
 int main(){
     std::cout << "Testing OutputPack detection\n";
     std::cout << OutputPack<void, int>::OUTPUT_COUNT << " == 0\n";
@@ -72,6 +71,8 @@ int main(){
     std::cout << OutputPack<void, HashedInput<int>, HashedInput<int>>::OUTPUT_COUNT << " == 0\n";
     std::cout << OutputPack<void, HashedOutput<int>>::OUTPUT_COUNT << " == 1\n";
     std::cout << OutputPack<void, HashedOutput<int>, HashedOutput<int>>::OUTPUT_COUNT << " == 2\n";
+	
+
     static_assert(!ce::function_traits::is_const(&bar::member), "member is non const");
     static_assert(ce::function_traits::is_const(&bar::member2), "member is const");
 
