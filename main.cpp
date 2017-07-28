@@ -30,7 +30,7 @@ struct bar{
     static int foo(int value){
         return value;
     }
-    int member(int value){
+    int member(int value) const{
         return value;
     }
     void setter(int& value, int& value2){
@@ -73,8 +73,8 @@ int main(){
     std::cout << OutputPack<void, HashedOutput<int>, HashedOutput<int>>::OUTPUT_COUNT << " == 2\n";
 	
 
-    static_assert(!ce::function_traits::is_const(&bar::member), "member is non const");
-    static_assert(ce::function_traits::is_const(&bar::member2), "member is const");
+    //static_assert(!ce::function_traits::is_const(&bar::member), "member is non const");
+    //static_assert(ce::function_traits::is_const(&bar::member2), "member is const");
 
     ICacheEngine::setEngine(std::make_unique<CacheEngine>());
     auto hashed = makeInput<int>(5);
@@ -86,33 +86,33 @@ int main(){
     std::cout << exec(&bar::staticFunc, 0) << std::endl;
     bar cls;
     auto executor = makeExecutor(cls);
-    std::cout << executor.EXEC(&bar::member), hashed) << std::endl;
-    std::cout << executor.EXEC(&bar::member), hashed) << std::endl;
+    std::cout << EXEC_MEMBER(&bar::member)(executor, hashed) << std::endl;
+    std::cout << EXEC_MEMBER(&bar::member)(executor, hashed) << std::endl;
     int value1 = 20, value2 = 10;
-    executor.EXEC(&bar::setter), makeOutput(value1), makeOutput(value2));
+    EXEC_MEMBER(&bar::setter)(executor, makeOutput(value1), makeOutput(value2));
     assert(value1 == 5);
     assert(value2 == 10);
     value1 = 100;
     value2 = 200;
     
-    executor.EXEC(&bar::setter), makeOutput(value2), makeOutput(value1));
+    EXEC_MEMBER(&bar::setter)(executor,makeOutput(value2), makeOutput(value1));
     assert(value1 == 10);
     assert(value2 == 5);
     
-    executor.EXEC(&bar::apply), 10, makeOutput(value1));
-    executor.EXEC(&bar::apply), 10, makeOutput(value1));
-    executor.EXEC(&bar::apply), 5, makeOutput(value1));
+    EXEC_MEMBER(&bar::apply)(executor, 10, makeOutput(value1));
+    EXEC_MEMBER(&bar::apply)(executor, 10, makeOutput(value1));
+    EXEC_MEMBER(&bar::apply)(executor, 5, makeOutput(value1));
     std::cout << "Testing setters and getters" << std::endl;
-    int ret = executor.EXEC(&bar::get));
+    int ret = EXEC_MEMBER(&bar::get)(executor);
     std::cout << ret << std::endl;
-    executor.set(&bar::set, 15);
-    std::cout << executor.EXEC(&bar::get)) << std::endl;
-    std::cout << executor.EXEC(&bar::get)) << std::endl;
+    //executor.set(&bar::set, 15);
+    std::cout << EXEC_MEMBER(&bar::get)(executor) << std::endl;
+    std::cout << EXEC_MEMBER(&bar::get)(executor) << std::endl;
 
     
-    executor.EXEC(&bar::member2), 0,1);
-    executor.EXEC(static_cast<void(bar::*)(int)>(&bar::overloaded)), 1);
-    executor.EXEC(static_cast<void(bar::*)(float)>(&bar::overloaded)), 1.f);
+    EXEC_MEMBER(&bar::member2)(executor, 0,1);
+    EXEC_MEMBER(static_cast<void(bar::*)(int)>(&bar::overloaded))(executor, 1);
+    EXEC_MEMBER(static_cast<void(bar::*)(float)>(&bar::overloaded))(executor, 1.f);
     
     return 0;
 }

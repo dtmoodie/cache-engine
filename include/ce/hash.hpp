@@ -40,4 +40,23 @@ template<class T, class...Args>
 size_t generateHash(std::size_t seed, T&& v, Args&&... args) {
     return generateHash(combineHash(seed, std::forward<T>(v)), std::forward<Args>(args)...);
 }
+
+template<class T> struct ClassHasher {
+    static constexpr const char* name() {
+        return __FUNCTION__;
+    }
+    static constexpr uint32_t hash() {
+        return ct::ctcrc32(__FUNCTION__);
+    }
+};
+
+template<class T>
+constexpr uint32_t classHash() {
+    return ClassHasher<T>::hash();
+}
+template<class T>
+constexpr const char* className() {
+    return ClassHasher<T>::name();
+}
+
 }

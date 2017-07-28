@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     cudaStreamCreate(&stream);
 
     std::cout << ce::countOutputs(d_vec, ce::makeOutput(d_out), stream) << std::endl;
-    exec.EXEC(&async_processor::apply), d_vec, ce::makeOutput(d_out), stream);
+    exec.EXEC_MEMBER(&async_processor::apply)(d_vec, ce::makeOutput(d_out), stream);
 
 #ifdef HAVE_OPENCV
     
