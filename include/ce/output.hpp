@@ -4,21 +4,17 @@ namespace ce {
 
 template<class T> 
 struct HashedOutput {
-
 	HashedOutput() {
-
 	}
 
     HashedOutput(HashedOutput<T>&& other) :
         m_ref(other.m_ref),
 		m_hash(other.m_hash){
-
     }
 
     HashedOutput(HashedOutput<T>& other) :
         m_ref(other.m_ref),
 		m_hash(other.m_hash){
-
     }
 
     HashedOutput(T ref) :
@@ -28,11 +24,9 @@ struct HashedOutput {
     HashedOutput(T& value, size_t hash):
         m_ref(value), m_hash(hash){}
 
-	~HashedOutput() {
-
-	}
     operator T&() {return m_ref;}
     operator const T&() const {return m_ref;}
+
     T m_ref;
     size_t m_hash = 0;
 };
@@ -44,12 +38,12 @@ std::ostream& operator<<(std::ostream& os, const HashedOutput<T>& value){
 }
 
 template<class T> 
-HashedOutput<T&> make_output(T& ref) {
+HashedOutput<T&> makeOutput(T& ref) {
     return HashedOutput<T&>(ref);
 }
 
 template<class T>
-HashedOutput<T*> make_output(T* ptr) {
+HashedOutput<T*> makeOutput(T* ptr) {
 	return HashedOutput<T*>(ptr);
 }
 

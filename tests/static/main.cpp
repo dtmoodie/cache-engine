@@ -157,13 +157,13 @@ BOOST_AUTO_TEST_CASE(test_foo3) {
 
 BOOST_AUTO_TEST_CASE(test_foo4) {
     double result1, result2 = 0.0;
-    auto out1 = ce::make_output(result1);
+    auto out1 = ce::makeOutput(result1);
     ce::exec(foo4, 2,3,4, out1);
     foo4(2,3,4, result2);
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
 
-    auto out2 = ce::make_output(result1);
+    auto out2 = ce::makeOutput(result1);
     ce::exec(foo4, 5, 6, 7, out2);
     foo4(5, 6, 7, result2);
     BOOST_REQUIRE_EQUAL(result1, result2); 
@@ -171,14 +171,14 @@ BOOST_AUTO_TEST_CASE(test_foo4) {
     BOOST_REQUIRE_NE(out1.m_hash, out2.m_hash);
 
     // Get cached results
-    auto out3 = ce::make_output(result1);
+    auto out3 = ce::makeOutput(result1);
     ce::exec(foo4, 2, 3, 4, out3);
     foo4(2, 3, 4, result2);
     BOOST_REQUIRE_EQUAL(out1.m_hash, out3.m_hash);
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
 
-    auto out4 = ce::make_output(result1);
+    auto out4 = ce::makeOutput(result1);
     ce::exec(foo4, 5, 6, 7, out4);
     foo4(5, 6, 7, result2);
     BOOST_REQUIRE_EQUAL(out2.m_hash, out4.m_hash);
@@ -189,13 +189,13 @@ BOOST_AUTO_TEST_CASE(test_foo4) {
 BOOST_AUTO_TEST_CASE(test_chain){
     auto result1 = ce::exec(foo2, 5, 10);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
-    auto result2 = ce::exec(foo3, ce::make_input(result1), 4,5);
+    auto result2 = ce::exec(foo3, ce::makeInput(result1), 4,5);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
 
     auto result3 = ce::exec(foo2, 5, 10);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
     BOOST_REQUIRE_EQUAL(result1.m_hash, result3.m_hash);
-    auto result4 = ce::exec(foo3, ce::make_input(result3), 4, 5);
+    auto result4 = ce::exec(foo3, ce::makeInput(result3), 4, 5);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
     BOOST_REQUIRE_EQUAL(result2.m_hash, result4.m_hash);
 }
@@ -203,8 +203,8 @@ BOOST_AUTO_TEST_CASE(test_chain){
 BOOST_AUTO_TEST_CASE(test_multi_out){
     int val1 = 0.0;
     double val2 = 0.0;
-    auto out1 = ce::make_output(val1);
-    auto out2 = ce::make_output(val2);
+    auto out1 = ce::makeOutput(val1);
+    auto out2 = ce::makeOutput(val2);
     auto ret1 = ce::exec(foo5, 4,5, out1, out2);
     BOOST_REQUIRE_NE(out1.m_hash, out2.m_hash);
     BOOST_REQUIRE_NE(out1.m_hash, ret1.m_hash);
@@ -212,8 +212,8 @@ BOOST_AUTO_TEST_CASE(test_multi_out){
 	BOOST_REQUIRE_EQUAL(out2.m_ref, 4 + 5);
 	BOOST_REQUIRE_EQUAL(ret1, out1.m_ref + out2.m_ref);
     
-    auto out3 = ce::make_output(val1);
-    auto out4 = ce::make_output(val2);
+    auto out3 = ce::makeOutput(val1);
+    auto out4 = ce::makeOutput(val2);
     auto ret2 = ce::exec(foo5, 4, 5, out3, out4);
     BOOST_REQUIRE_EQUAL(out3.m_hash, out1.m_hash);
     BOOST_REQUIRE_EQUAL(out4.m_hash, out2.m_hash);
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(test_multi_out){
 	int in = 5;
 	int out = 0;
 
-	ce::exec(foo6, in, ce::make_output(&out), 4, 5, 6);
+	ce::exec(foo6, in, ce::makeOutput(&out), 4, 5, 6);
 
 
 }

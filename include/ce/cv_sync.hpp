@@ -19,6 +19,7 @@ namespace ce{
 
         struct CE_EXPORT EventPtr : public std::shared_ptr<cv::cuda::Event> {
             EventPtr();
+            std::unique_ptr<cv::cuda::Stream> m_stream;
         };
     private:
         CvEventPool();
@@ -34,15 +35,17 @@ namespace ce{
         template<class TupleType>
         static void setOutputs(size_t hash,TupleType& result, cv::cuda::Stream& stream) {
             (void)hash;
-            CvEventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
-            stream.waitEvent(*ev);
+            CvEventPool::EventPtr& ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
+            if(*(ev.m_stream) != stream)
+                stream.waitEvent(*ev);
         }
 
         template<class TupleType>
         static void saveOutputs(size_t hash, TupleType& result, cv::cuda::Stream& stream) {
             (void)hash;
             if (stream) {
-                CvEventPool::EventPtr ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
+                CvEventPool::EventPtr& ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
+                ev.m_stream = std::make_unique<cv::cuda::Stream>(stream);
                 ev->record(stream);
             }
         }

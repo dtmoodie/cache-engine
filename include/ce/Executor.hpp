@@ -12,7 +12,43 @@
 #include <iostream>
 
 namespace ce {
-template<class T, class Derived> struct ExecutorBase: public Derived {
+template<class T, class Derived>
+struct ExecutorBase;
+
+template<Hash_t FHash, class T, class Derived, class R, class ... FArgs>
+struct ExecutionToken{
+    ExecutionToken(R(T::*func)(FArgs...), Hash_t obj_hash):
+    m_func(func), m_obj_hash(obj_hash){
+    }
+
+    template<class... Args>
+    R operator()(Args&&... args){
+        return executor.exec<FHash>(m_func, std::forward<Args>(args)...);
+    }
+
+    R(T::*m_func)(FArgs...);
+    Hash_t& m_obj_hash;
+};
+
+template<Hash_t FHash, class T, class Derived, class R, class ... FArgs>
+struct ConstExecutionToken{
+    ConstExecutionToken(R(T::*func)(FArgs...) const, ExecutorBase<T, Derived>& exec) :
+        m_func(func), executor(exec) {
+    }
+
+    template<class... Args>
+    R operator()(Args&&... args) {
+        return executor.exec<FHash>(m_func, std::forward<Args>(args)...);
+    }
+
+    R(T::*m_func)(FArgs...) const;
+    Hash_t m_obj_hash;
+};
+
+
+
+template<class T, class Derived> 
+struct ExecutorBase: public Derived {
     template<class ... Args>
     ExecutorBase(Args&&... args):
     Derived(std::forward<Args>(args)...){
@@ -115,6 +151,12 @@ template<class T, class Derived> struct ExecutorBase: public Derived {
         m_hash = generateHash(m_hash, args...);
         (this->m_obj.*func)(ce::get(std::forward<Args>(args))...);
     }
+    
+    // Returns an execution token that calls the above exec functions
+    template<size_t hash, class R, class...FArgs>
+    ExecutionToken<hash, T, Derived, R, FArgs...> memberExec(R(T::*func)(FArgs...)){
+        return ExecutionToken<hash, T, Derived, R, FArgs>(func, *this);
+    }
 
     std::size_t m_hash = generateHash();
 };
@@ -136,18 +178,18 @@ struct ExecutorOwner{
 };
 
 template<class T>
-ExecutorBase<T, ExecutorRef<T>> make_executor(T& obj) {
+ExecutorBase<T, ExecutorRef<T>> makeExecutor(T& obj) {
     return ExecutorBase<T, ExecutorRef<T>>(obj);
 }
 
 template<class T, class ... Args>
-ExecutorBase<T, ExecutorOwner<T>> make_executor(Args&&... args){
+ExecutorBase<T, ExecutorOwner<T>> makeExecutor(Args&&... args){
     return ExecutorBase<T, ExecutorOwner<T>>(std::forward<Args>(args)...);
 
 }
 
 template<class T>
-ExecutorBase<T, ExecutorRef<T>> make_executor(HashedOutput<T&>& obj){
+ExecutorBase<T, ExecutorRef<T>> makeExecutor(HashedOutput<T&>& obj){
     ExecutorBase<T, ExecutorRef<T>> ret(obj.m_ref);
     ret.m_hash = obj.m_hash;
     return ret;

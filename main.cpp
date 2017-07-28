@@ -77,7 +77,7 @@ int main(){
     static_assert(ce::function_traits::is_const(&bar::member2), "member is const");
 
     ICacheEngine::setEngine(std::make_unique<CacheEngine>());
-    auto hashed = make_input<int>(5);
+    auto hashed = makeInput<int>(5);
     std::cout << exec(foo1, 0) << std::endl;
     std::cout << exec(foo1, 0) << std::endl;
     std::cout << exec(foo2, 0) << std::endl;
@@ -85,23 +85,23 @@ int main(){
     std::cout << exec(bar::foo, 20) << std::endl;
     std::cout << exec(&bar::staticFunc, 0) << std::endl;
     bar cls;
-    auto executor = make_executor(cls);
+    auto executor = makeExecutor(cls);
     std::cout << executor.EXEC(&bar::member), hashed) << std::endl;
     std::cout << executor.EXEC(&bar::member), hashed) << std::endl;
     int value1 = 20, value2 = 10;
-    executor.EXEC(&bar::setter), make_output(value1), make_output(value2));
+    executor.EXEC(&bar::setter), makeOutput(value1), makeOutput(value2));
     assert(value1 == 5);
     assert(value2 == 10);
     value1 = 100;
     value2 = 200;
     
-    executor.EXEC(&bar::setter), make_output(value2), make_output(value1));
+    executor.EXEC(&bar::setter), makeOutput(value2), makeOutput(value1));
     assert(value1 == 10);
     assert(value2 == 5);
     
-    executor.EXEC(&bar::apply), 10, make_output(value1));
-    executor.EXEC(&bar::apply), 10, make_output(value1));
-    executor.EXEC(&bar::apply), 5, make_output(value1));
+    executor.EXEC(&bar::apply), 10, makeOutput(value1));
+    executor.EXEC(&bar::apply), 10, makeOutput(value1));
+    executor.EXEC(&bar::apply), 5, makeOutput(value1));
     std::cout << "Testing setters and getters" << std::endl;
     int ret = executor.EXEC(&bar::get));
     std::cout << ret << std::endl;
