@@ -10,8 +10,10 @@
 #include <ct/String.hpp>
 #include <ct/StringFormat.hpp>
 #include <ce/execute.hpp>
+#include <algorithm>
 #include <math.h>
 #include <cmath>
+#include <vector>
 void foo0(){
 
 }
@@ -40,6 +42,13 @@ double foo5(int value1, int value2, int& out1, double& out2){
 
 void foo6(int input, int* output, int opt1, int opt2, int opt3) {
 	*output = input * opt1 + opt2 + opt3;
+}
+
+void foo7(const std::vector<int>& input, double& output){
+    output = 0;
+    for(int val : input){
+        output += val;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(initialize){
@@ -206,6 +215,7 @@ BOOST_AUTO_TEST_CASE(test_multi_out){
     auto out1 = ce::makeOutput(val1);
     auto out2 = ce::makeOutput(val2);
     auto ret1 = ce::exec(foo5, 4,5, out1, out2);
+    BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
     BOOST_REQUIRE_NE(out1.m_hash, out2.m_hash);
     BOOST_REQUIRE_NE(out1.m_hash, ret1.m_hash);
 	BOOST_REQUIRE_EQUAL(out1.m_ref, 4 * 5);
@@ -215,21 +225,47 @@ BOOST_AUTO_TEST_CASE(test_multi_out){
     auto out3 = ce::makeOutput(val1);
     auto out4 = ce::makeOutput(val2);
     auto ret2 = ce::exec(foo5, 4, 5, out3, out4);
+    BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
     BOOST_REQUIRE_EQUAL(out3.m_hash, out1.m_hash);
     BOOST_REQUIRE_EQUAL(out4.m_hash, out2.m_hash);
     BOOST_REQUIRE_EQUAL(ret1.m_hash, ret2.m_hash);
 	BOOST_REQUIRE_EQUAL(out3.m_ref, 4 * 5);
 	BOOST_REQUIRE_EQUAL(out4.m_ref, 4 + 5);
 	BOOST_REQUIRE_EQUAL(ret2, out3.m_ref + out4.m_ref);
-
 	int in = 5;
 	int out = 0;
 
 	ce::exec(foo6, in, ce::makeOutput(&out), 4, 5, 6);
-
-
 }
 
+BOOST_AUTO_TEST_CASE(const_ref_input){
+    auto input = ce::makeInput<std::vector<int>>(100, 5);
+    double val = 0.0;
+    auto out1 = ce::makeOutput(val);
+    ce::exec(foo7, input, out1);
+    BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
+    BOOST_REQUIRE_EQUAL(val, 100 * 5);
+    auto out2 = ce::makeOutput(val);
+    ce::exec(foo7, input, out2);
+    BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
+    BOOST_REQUIRE_EQUAL(out1.m_hash, out2.m_hash);
+    BOOST_REQUIRE_NE(out1.m_hash, 0);
+}
+
+void foo7Wrapper(const std::vector<int>& input, double& output){
+    ce::exec(foo7, ce::wrapInput(input), ce::makeOutput(output));
+}
+
+// Less efficient because a hash is calculated on the whole vector every call inside of ce::wrapInput
+// In most cases it is preferrable to use makeInput
+BOOST_AUTO_TEST_CASE(wrapper_function){
+    std::vector<int> in(100,5);
+    double out = 0.0;
+    foo7Wrapper(in,out);
+    BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
+    foo7Wrapper(in, out);
+    BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
+}
 
 BOOST_AUTO_TEST_CASE(cleanup) {
     ce::ICacheEngine::releaseEngine();
