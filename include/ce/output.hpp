@@ -6,18 +6,18 @@ namespace ce {
 template<class T> 
 struct HashedOutput {
     HashedOutput(){}
-    HashedOutput(const T& val, Hash_t hash = 0):
+    HashedOutput(const T& val, size_t hash = 0):
     m_ref(val), m_hash(hash){
     }
 
-    HashedOutput(T&& val, Hash_t hash = 0):
+    HashedOutput(T&& val, size_t hash = 0):
         m_ref(std::move(val)), m_hash(hash){}
 
     operator T&() {return m_ref;}
     operator const T&() const {return m_ref;}
 
     T m_ref;
-    Hash_t m_hash = 0;
+    size_t m_hash = 0;
 };
 
 // This version is used for wrapping other objects
@@ -27,7 +27,7 @@ struct HashedOutput<T&> {
     HashedOutput(T& ref) :
         m_ref(ref), m_hash(m_owned_hash) {}
 
-    HashedOutput(T& ref, Hash_t& hash): 
+    HashedOutput(T& ref, size_t& hash): 
     m_ref(ref), m_hash(hash){}
 
 
@@ -35,8 +35,8 @@ struct HashedOutput<T&> {
     operator const T&() const { return m_ref; }
 
     T& m_ref;
-    Hash_t& m_hash;
-    Hash_t m_owned_hash = 0;
+    size_t& m_hash;
+    size_t m_owned_hash = 0;
 };
 
 template<typename T>
@@ -57,7 +57,7 @@ HashedOutput<T*> makeOutput(T* ptr) {
 
 
 template<class T>
-std::size_t combineHash(std::size_t seed, const HashedOutput<T>& v) {
+size_t combineHash(size_t seed, const HashedOutput<T>& v) {
     (void)v;
     return seed;
 }

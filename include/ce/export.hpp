@@ -9,5 +9,5 @@
 #endif
 
 namespace ce{
-    typedef size_t Hash_t;
+    typedef size_t size_t;
 }

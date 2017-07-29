@@ -2,8 +2,8 @@
 #include <ce/Executor.hpp>
 struct MutateOutputObject;
 namespace ce{
-    const Hash_t& getObjectHash(const MutateOutputObject& obj);
-    Hash_t& getObjectHash(MutateOutputObject& obj);
+    const size_t& getObjectHash(const MutateOutputObject& obj);
+    size_t& getObjectHash(MutateOutputObject& obj);
 }
 struct TestObject{
     TestObject(int init = 0): member1(init){}
@@ -36,7 +36,7 @@ struct TestOutputObject{
 };
 
 struct TestHashedOutputObject: public TestOutputObject {
-    ce::Hash_t hash;
+    size_t hash;
 };
 
 struct MutateOutputObject{
@@ -45,9 +45,9 @@ struct MutateOutputObject{
     }
     void set(int val){member = val;}
 protected:
-    friend ce::Hash_t& ce::getObjectHash(MutateOutputObject& obj);
-    friend const ce::Hash_t& ce::getObjectHash(const MutateOutputObject& obj);
-    ce::Hash_t hash = ce::classHash<MutateOutputObject>();
+    friend size_t& ce::getObjectHash(MutateOutputObject& obj);
+    friend const size_t& ce::getObjectHash(const MutateOutputObject& obj);
+    size_t hash = ce::classHash<MutateOutputObject>();
     int member;
 };
 
@@ -59,7 +59,7 @@ struct MemoizedObject{
 
 
 struct TestHashedObject: public TestObject {
-    ce::Hash_t m_hash = ce::classHash<TestHashedObject>();
+    size_t m_hash = ce::classHash<TestHashedObject>();
 };
 
 namespace ce{
@@ -71,21 +71,21 @@ namespace ce{
         return obj;
     }
 
-    Hash_t& getObjectHash(TestHashedObject& obj){
+    size_t& getObjectHash(TestHashedObject& obj){
         return obj.m_hash;
     }
 
-    const Hash_t& getObjectHash(const TestHashedObject& obj) {
+    const size_t& getObjectHash(const TestHashedObject& obj) {
         return obj.m_hash;
     }
     
     HashedOutput<TestHashedOutputObject&> makeOutput(TestHashedOutputObject& ref) {
         return {ref, ref.hash};
     }
-    Hash_t& getObjectHash(MutateOutputObject& obj){
+    size_t& getObjectHash(MutateOutputObject& obj){
         return obj.hash;
     }
-    const Hash_t& getObjectHash(const MutateOutputObject& obj){
+    const size_t& getObjectHash(const MutateOutputObject& obj){
         return obj.hash;
     }
     MutateOutputObject& getObjectRef(MutateOutputObject& obj){

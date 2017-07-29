@@ -1,16 +1,16 @@
 #pragma once
 
 namespace ce{
-    template<Hash_t FHash, class Token, class Executor, class T, class R, class... FArgs>
+    template<size_t FHash, class Token, class Executor, class T, class R, class... FArgs>
     struct ExecutorHelper;
 
-    template<Hash_t FHash, class Token, class Executor, class T, class R, class... FArgs>
+    template<size_t FHash, class Token, class Executor, class T, class R, class... FArgs>
     ExecutorHelper<FHash, Token, Executor, T, R, FArgs...>::ExecutorHelper(Token&& token, Executor& executor) 
         : m_token(std::move(token)), 
         m_executor(executor) {
     }
 
-    template<Hash_t FHash, class Token, class Executor, class T, class R, class... FArgs>
+    template<size_t FHash, class Token, class Executor, class T, class R, class... FArgs>
     template<class...Args>
     R ExecutorHelper<FHash, Token, Executor, T, R, FArgs...>::operator()(Args&&... args) {
         return m_token(m_executor, std::forward<Args>(args)...);
@@ -100,37 +100,37 @@ namespace ce{
     }
 
     template<class T>
-    Hash_t& getObjectHash(ExecutorBase<T, ExecutorRef<T>>& executor) {
+    size_t& getObjectHash(ExecutorBase<T, ExecutorRef<T>>& executor) {
         return executor.m_hash;
     }
 
     template<class T>
-    Hash_t& getObjectHash(ExecutorBase<T, ExecutorOwner<T>>& executor) {
+    size_t& getObjectHash(ExecutorBase<T, ExecutorOwner<T>>& executor) {
         return executor.m_hash;
     }
 
     template<class T>
-    Hash_t getObjectHash(const ExecutorBase<T, ExecutorRef<T>>& executor) {
+    size_t getObjectHash(const ExecutorBase<T, ExecutorRef<T>>& executor) {
         return executor.m_hash;
     }
 
     template<class T>
-    Hash_t getObjectHash(const ExecutorBase<T, ExecutorOwner<T>>& executor) {
+    size_t getObjectHash(const ExecutorBase<T, ExecutorOwner<T>>& executor) {
         return executor.m_hash;
     }
 
-    template<Hash_t FHash, class T, class R, class... FArgs>
+    template<size_t FHash, class T, class R, class... FArgs>
     struct ExecutionToken;
 
-    template<Hash_t FHash, class T, class R, class... FArgs>
+    template<size_t FHash, class T, class R, class... FArgs>
     ExecutionToken<FHash, T, R, FArgs...>::ExecutionToken(R(T::*func)(FArgs...)) : m_func(func) {
     }
 
-    template<Hash_t FHash, class T, class R, class... FArgs>
+    template<size_t FHash, class T, class R, class... FArgs>
     template<class T2, class ... Args>
     HashedOutput<R> ExecutionToken<FHash, T, R, FArgs...>::operator()(T2& object, Args&&...args) {
         T& obj = getObjectRef(object);
-        Hash_t& obj_hash = getObjectHash(object);
+        size_t& obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
             typedef OutputPack<void, HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
@@ -164,17 +164,17 @@ namespace ce{
         return out;
     }
 
-    template<Hash_t FHash, class T, class... FArgs>
+    template<size_t FHash, class T, class... FArgs>
     ExecutionToken<FHash, T, void, FArgs...>::ExecutionToken(void(T::*func)(FArgs...)) 
         : m_func(func) {
     }
 
-    template<Hash_t FHash, class T, class... FArgs>
+    template<size_t FHash, class T, class... FArgs>
     template<class T2, class ... Args>
     typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type 
         ExecutionToken<FHash, T, void, FArgs...>::operator()(T2& object, Args&&...args) {
         T& obj = getObjectRef(object);
-        Hash_t& obj_hash = getObjectHash(object);
+        size_t& obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
             typedef OutputPack<void, std::remove_reference_t<Args>...> PackType;
@@ -209,29 +209,29 @@ namespace ce{
         }
     }
 
-    template<Hash_t FHash, class T, class... FArgs>
+    template<size_t FHash, class T, class... FArgs>
     template<class T2, class ... Args>
     typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
         ExecutionToken<FHash, T, void, FArgs...>::operator()(T2& object, Args&&...args) {
         T& obj = getObjectRef(object);
-        Hash_t& obj_hash = getObjectHash(object);
+        size_t& obj_hash = getObjectHash(object);
         size_t hash = generateHash(obj_hash, args...);
         hash = combineHash(hash, FHash);
         obj_hash = hash;
         (obj.*m_func)(ce::get(std::forward<Args>(args))...);
     }
 
-    template<Hash_t FHash, class T, class R, class... FArgs>
+    template<size_t FHash, class T, class R, class... FArgs>
     struct ConstExecutionToken;
-    template<Hash_t FHash, class T, class R, class... FArgs>
+    template<size_t FHash, class T, class R, class... FArgs>
     ConstExecutionToken<FHash, T, R, FArgs...>::ConstExecutionToken(R(T::*func)(FArgs...) const) : m_func(func) {
     }
 
-    template<Hash_t FHash, class T, class R, class... FArgs>
+    template<size_t FHash, class T, class R, class... FArgs>
     template<class T2, class ... Args>
     HashedOutput<R> ConstExecutionToken<FHash, T, R, FArgs...>::operator()(const T2& object, Args&&...args) {
         const T& obj = getObjectRef(object);
-        Hash_t obj_hash = getObjectHash(object);
+        size_t obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
             typedef OutputPack<void, HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
@@ -268,17 +268,17 @@ namespace ce{
         return out;
     }
 
-    template<Hash_t FHash, class T, class... FArgs>
+    template<size_t FHash, class T, class... FArgs>
     ConstExecutionToken<FHash, T, void, FArgs...>::ConstExecutionToken(void(T::*func)(FArgs...) const) 
         : m_func(func) {
     }
 
-    template<Hash_t FHash, class T, class... FArgs>
+    template<size_t FHash, class T, class... FArgs>
     template<class T2, class ... Args>
     typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
         ConstExecutionToken<FHash, T, void, FArgs...>::operator()(const T2& object, Args&&...args) {
         const T& obj = getObjectRef(object);
-        Hash_t obj_hash = getObjectHash(object);
+        size_t obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
             typedef OutputPack<void, std::remove_reference_t<Args>...> PackType;
@@ -316,7 +316,7 @@ namespace ce{
         }
     }
 
-    template<Hash_t FHash, class T, class... FArgs>
+    template<size_t FHash, class T, class... FArgs>
     template<class T2, class ... Args>
     typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
         ConstExecutionToken<FHash, T, void, FArgs...>::operator()(const T2& object, Args&&...args) {
@@ -324,12 +324,12 @@ namespace ce{
         (obj.*m_func)(ce::get(std::forward<Args>(args))...);
     }
 
-    template<Hash_t FHash, class T, class R, class... FArgs>
+    template<size_t FHash, class T, class R, class... FArgs>
     ExecutionToken<FHash, T, R, FArgs...> exec(R(T::*func)(FArgs...)) {
         return ExecutionToken<FHash, T, R, FArgs...>(func);
     }
 
-    template<Hash_t FHash, class T, class R, class... FArgs>
+    template<size_t FHash, class T, class R, class... FArgs>
     ConstExecutionToken<FHash, T, R, FArgs...> exec(R(T::*func)(FArgs...)const) {
         return ConstExecutionToken<FHash, T, R, FArgs...>(func);
     }

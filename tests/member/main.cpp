@@ -16,8 +16,6 @@
 #include <cmath>
 #include <iostream>
 
-
-
 BOOST_AUTO_TEST_CASE(class_hash_uniqueness){
     static_assert(ce::classHash<TestObject>() != ce::classHash<TestHashedObject>(), "Hash must be unique for different objects");
     static_assert(ct::ctcrc32_ignore_whitespace("TestObject::get") == ct::ctcrc32_ignore_whitespace("TestObject:: get"), "Hash must ignore whitespace");

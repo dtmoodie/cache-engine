@@ -1,4 +1,5 @@
 #pragma once
+#include <ce/export.hpp>
 #include <ce/OutputPack.hpp>
 namespace ce {
 

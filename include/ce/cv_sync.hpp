@@ -7,7 +7,7 @@
 
 namespace ce{
 	
-	std::size_t combineHash(std::size_t seed, const cv::cuda::Stream& v) {
+	size_t combineHash(size_t seed, const cv::cuda::Stream& v) {
 		(void)v;
 		return seed;
 	}

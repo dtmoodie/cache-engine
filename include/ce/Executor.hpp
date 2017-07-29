@@ -13,13 +13,13 @@
 
 namespace ce {
 
-template<Hash_t FHash, class T, class R, class... FArgs>
+template<size_t FHash, class T, class R, class... FArgs>
 struct ConstExecutionToken;
 
-template<Hash_t FHash, class T, class R, class... FArgs>
+template<size_t FHash, class T, class R, class... FArgs>
 struct ExecutionToken;
 
-template<Hash_t FHash, class Token, class Executor, class T, class R, class... FArgs>
+template<size_t FHash, class Token, class Executor, class T, class R, class... FArgs>
 struct ExecutorHelper {
     ExecutorHelper(Token&& token, Executor& executor);
     template<class...Args>
@@ -40,7 +40,7 @@ struct ExecutorBase: public Derived {
     template<uint32_t fhash, class R, class...FArgs>
     ExecutorHelper<fhash, ConstExecutionToken<fhash, T, R, FArgs...>, ExecutorBase<T, Derived>, T, R, FArgs...> exec(R(T::*func)(FArgs...) const);
 
-    std::size_t m_hash = generateHash();
+    size_t m_hash = generateHash();
 };
 
 template<class T> 
@@ -82,18 +82,18 @@ template<class T>
 const T& getObjectRef(const ExecutorBase<T, ExecutorOwner<T>>& executor);
 
 template<class T> 
-Hash_t& getObjectHash(ExecutorBase<T, ExecutorRef<T>>& executor);
+size_t& getObjectHash(ExecutorBase<T, ExecutorRef<T>>& executor);
 
 template<class T> 
-Hash_t& getObjectHash(ExecutorBase<T, ExecutorOwner<T>>& executor);
+size_t& getObjectHash(ExecutorBase<T, ExecutorOwner<T>>& executor);
 
 template<class T> 
-Hash_t getObjectHash(const ExecutorBase<T, ExecutorRef<T>>& executor);
+size_t getObjectHash(const ExecutorBase<T, ExecutorRef<T>>& executor);
 
 template<class T> 
-Hash_t getObjectHash(const ExecutorBase<T, ExecutorOwner<T>>& executor);
+size_t getObjectHash(const ExecutorBase<T, ExecutorOwner<T>>& executor);
 
-template<Hash_t FHash, class T, class R, class... FArgs>
+template<size_t FHash, class T, class R, class... FArgs>
 struct ExecutionToken{
     ExecutionToken(R(T::*func)(FArgs...));
 
@@ -103,7 +103,7 @@ struct ExecutionToken{
     R(T::*m_func)(FArgs...);
 };
 
-template<Hash_t FHash, class T, class... FArgs>
+template<size_t FHash, class T, class... FArgs>
 struct ExecutionToken<FHash, T, void, FArgs...> {
     ExecutionToken(void(T::*func)(FArgs...));
 
@@ -117,7 +117,7 @@ struct ExecutionToken<FHash, T, void, FArgs...> {
     void(T::*m_func)(FArgs...);
 };
 
-template<Hash_t FHash, class T, class R, class... FArgs>
+template<size_t FHash, class T, class R, class... FArgs>
 struct ConstExecutionToken {
     ConstExecutionToken(R(T::*func)(FArgs...) const);
 
@@ -127,7 +127,7 @@ struct ConstExecutionToken {
     R(T::*m_func)(FArgs...) const;
 };
 
-template<Hash_t FHash, class T, class... FArgs>
+template<size_t FHash, class T, class... FArgs>
 struct ConstExecutionToken<FHash, T, void, FArgs...> {
     ConstExecutionToken(void(T::*func)(FArgs...) const);
 
@@ -142,10 +142,10 @@ struct ConstExecutionToken<FHash, T, void, FArgs...> {
     void(T::*m_func)(FArgs...) const;
 };
 
-template<Hash_t FHash, class T, class R, class... FArgs>
+template<size_t FHash, class T, class R, class... FArgs>
 ExecutionToken<FHash, T, R, FArgs...> exec(R(T::*func)(FArgs...));
 
-template<Hash_t FHash, class T, class R, class... FArgs>
+template<size_t FHash, class T, class R, class... FArgs>
 ConstExecutionToken<FHash, T, R, FArgs...> exec(R(T::*func)(FArgs...)const);
 
 }

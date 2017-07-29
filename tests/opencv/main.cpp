@@ -15,7 +15,7 @@
 #include <opencv2/cudawarping.hpp>
 #endif
 namespace ce{
-std::size_t combineHash(std::size_t seed, const cv::_InputOutputArray& v) {
+size_t combineHash(size_t seed, const cv::_InputOutputArray& v) {
     (void)v;
     return seed;
 }

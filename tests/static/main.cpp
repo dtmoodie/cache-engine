@@ -127,8 +127,8 @@ const char* format(const char* fmt, FormatArgs&&... args){
 
 BOOST_AUTO_TEST_CASE(test_foo1){
     
-    auto spec_size = ct::specifierSize<2>("asdf {3} {4}");
-    fmt("asdf {3} {4}", 4, 5);
+    //auto spec_size = ct::specifierSize<2>("asdf {3} {4}");
+    //fmt("asdf {3} {4}", 4, 5);
     BOOST_REQUIRE_EQUAL(ce::exec(foo1, 10), foo1(10));
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
     BOOST_REQUIRE_EQUAL(ce::exec(foo1, 11), foo1(11));

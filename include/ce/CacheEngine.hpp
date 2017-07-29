@@ -7,10 +7,9 @@
 namespace ce{
 struct CE_EXPORT CacheEngine : public ICacheEngine{
     CacheEngine();
-    virtual ~CacheEngine();
-    std::shared_ptr<IResult>& getCachedResult(size_t hash);
+    virtual ~CacheEngine() override;
+    virtual std::shared_ptr<IResult>& getCachedResult(size_t hash) override;
 private:
-    
     std::map<size_t, std::shared_ptr<IResult>> m_result_cache;
 };
 }

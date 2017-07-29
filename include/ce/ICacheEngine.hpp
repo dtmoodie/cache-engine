@@ -3,9 +3,9 @@
 #include <ce/export.hpp>
 #include <memory>
 namespace ce {
-    // was the last call to a ce::exec or ce::Executor::exec a cashed executation or a non cached executation, only used if CE_DEBUG_CACHE_USAGE is defined
-    bool CE_EXPORT wasCacheUsedLast();
-    void CE_EXPORT setCacheUsedLast(bool value);
+// was the last call to a ce::exec or ce::Executor::exec a cashed executation or a non cached executation, only used if CE_DEBUG_CACHE_USAGE is defined
+bool CE_EXPORT wasCacheUsedLast();
+void CE_EXPORT setCacheUsedLast(bool value);
 
 struct CE_EXPORT ICacheEngine {
     virtual ~ICacheEngine();

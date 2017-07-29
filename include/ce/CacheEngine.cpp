@@ -8,6 +8,7 @@ thread_local bool t_cache_used_last = false;
 bool wasCacheUsedLast(){
     return t_cache_used_last;
 }
+
 void setCacheUsedLast(bool value){
     t_cache_used_last = value;
 }
@@ -24,6 +25,7 @@ void ICacheEngine::setEngine(std::unique_ptr<ICacheEngine>&& engine, bool is_thr
     else
         g_engine = std::move(engine);
 }
+
 void ICacheEngine::releaseEngine(bool thread_engine){
     if(thread_engine){
         t_engine.reset();
@@ -31,17 +33,21 @@ void ICacheEngine::releaseEngine(bool thread_engine){
         g_engine.reset();
     }
 }
+
 ICacheEngine::~ICacheEngine(){
 }
+
 CacheEngine::~CacheEngine() {
     m_result_cache.clear();
 }
+
 CacheEngine::CacheEngine() {
 }
 
 std::shared_ptr<IResult>& CacheEngine::getCachedResult(size_t hash) {
     return m_result_cache[hash];
 }
+
 std::unique_ptr<ICacheEngine> ICacheEngine::create(){
     return std::make_unique<CacheEngine>();
 }
