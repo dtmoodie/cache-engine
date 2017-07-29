@@ -154,12 +154,14 @@ struct ExecutionToken{
 #endif
             R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
-            HashedOutput<R> out(ret, hash);
+            HashedOutput<R> out(std::move(ret), hash);
             PackType::saveOutputs(hash, results, out, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
             return out;
         }
-        return (obj.*m_func)(ce::get(std::forward<Args>(args))...);
+        R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
+        HashedOutput<R> out(std::move(ret));
+        return out;
     }
 
     R(T::*m_func)(FArgs...);
@@ -254,7 +256,7 @@ struct ConstExecutionToken {
 #endif
             R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
-            HashedOutput<R> out(ret, hash);
+            HashedOutput<R> out(std::move(ret), hash);
             PackType::saveOutputs(hash, results, out, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
             return out;
@@ -262,7 +264,9 @@ struct ConstExecutionToken {
 #ifdef CE_DEBUG_CACHE_USAGE 
         setCacheUsedLast(false);
 #endif
-        return (obj.*m_func)(ce::get(std::forward<Args>(args))...);
+        R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
+        HashedOutput<R> out(std::move(ret));
+        return out;
     }
 
     R(T::*m_func)(FArgs...) const;

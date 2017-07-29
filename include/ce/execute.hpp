@@ -46,7 +46,7 @@ typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTP
 }
 
 template<class R, class ... FArgs, class... Args>
-typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0, HashedOutput<R>>::type exec(R(*func)(FArgs...), Args&&...args) {
+HashedOutput<R> exec(R(*func)(FArgs...), Args&&...args) {
     ICacheEngine* eng = ICacheEngine::instance();
     if(eng){
         typedef OutputPack<void, HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
@@ -74,7 +74,7 @@ typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTP
 #endif
         R ret = func(ce::get(std::forward<Args>(args))...);
         output_tuple_type results;
-		HashedOutput<R> out(ret, hash);
+		HashedOutput<R> out(std::move(ret), hash);
         PackType::saveOutputs(hash, results, out, args...);
         result.reset(new TResult<output_tuple_type>(std::move(results)));
 		return out;
@@ -83,41 +83,7 @@ typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTP
     setCacheUsedLast(false);
 #endif
     R ret = func(ce::get(std::forward<Args>(args))...);
-    return HashedOutput<R>(ret, 0);
-}
-
-template<class R, class ... FArgs, class... Args>
-typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0, ce::HashedOutput<R>>::type exec(R(*func)(FArgs...), Args&&...args) {
-    ICacheEngine* eng = ICacheEngine::instance();
-    if (eng) {
-        size_t hash = generateHash(func);
-        hash = generateHash(hash, std::forward<Args>(args)...);
-#ifdef CE_DEBUG_CACHE_USAGE 
-        std::cout << "Hash: " << hash << std::endl;
-#endif
-        std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
-        if (result) {
-            std::shared_ptr<TResult<R>> tresult = std::dynamic_pointer_cast<TResult<R>>(result);
-            if (tresult) {
-#ifdef CE_DEBUG_CACHE_USAGE 
-                std::cout << "Found result in cache" << std::endl;
-                setCacheUsedLast(true);
-#endif
-                return HashedOutput<R>(std::get<0>(tresult->values), hash);
-            }
-        }
-#ifdef CE_DEBUG_CACHE_USAGE 
-        setCacheUsedLast(false);
-#endif
-        R ret = func(ce::get(std::forward<Args>(args))...);
-        result.reset(new TResult<R>(std::forward<R>(ret)));
-        return HashedOutput<R>(ret, hash);
-    }
-#ifdef CE_DEBUG_CACHE_USAGE 
-    setCacheUsedLast(false);
-#endif
-    R ret = func(ce::get(std::forward<Args>(args))...);
-    return HashedOutput<R>(ret, 0);
+    return HashedOutput<R>(std::move(ret), 0);
 }
 
 }

@@ -1,34 +1,42 @@
 #pragma once
+#include <ce/export.hpp>
 #include <iostream>
 namespace ce {
 
 template<class T> 
 struct HashedOutput {
-	HashedOutput() {
-	}
-
-    HashedOutput(HashedOutput<T>&& other) :
-        m_ref(other.m_ref),
-		m_hash(other.m_hash){
+    HashedOutput(){}
+    HashedOutput(const T& val, Hash_t hash = 0):
+    m_ref(val), m_hash(hash){
     }
 
-    HashedOutput(HashedOutput<T>& other) :
-        m_ref(other.m_ref),
-		m_hash(other.m_hash){
-    }
-
-    HashedOutput(T ref) :
-        m_ref(ref){
-	}
-
-    HashedOutput(T& value, size_t hash):
-        m_ref(value), m_hash(hash){}
+    HashedOutput(T&& val, Hash_t hash = 0):
+        m_ref(std::move(val)), m_hash(hash){}
 
     operator T&() {return m_ref;}
     operator const T&() const {return m_ref;}
 
     T m_ref;
-    size_t m_hash = 0;
+    Hash_t m_hash = 0;
+};
+
+// This version is used for wrapping other objects
+template<class T>
+struct HashedOutput<T&> {
+
+    HashedOutput(T& ref) :
+        m_ref(ref), m_hash(m_owned_hash) {}
+
+    HashedOutput(T& ref, Hash_t& hash): 
+    m_ref(ref), m_hash(hash){}
+
+
+    operator T&() { return m_ref; }
+    operator const T&() const { return m_ref; }
+
+    T& m_ref;
+    Hash_t& m_hash;
+    Hash_t m_owned_hash = 0;
 };
 
 template<typename T>

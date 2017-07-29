@@ -63,8 +63,21 @@ struct bar{
 
 
 // unfortunately we need to use this macro to deal with not being able to hash member function pointers on windows. :(
+#include <vector>
+void foo(std::vector<int>&& vec){
+    std::vector<int> other(std::move(vec));
 
+}
+void foo(int&& data){
+
+}
 int main(){
+    int test;
+    std::vector<int> testvec;
+    for(int i = 0; i < 100; ++i)
+        testvec.push_back(i);
+    foo(std::move(test));
+    foo(std::move(testvec));
     std::cout << "Testing OutputPack detection\n";
     std::cout << OutputPack<void, int>::OUTPUT_COUNT << " == 0\n";
     std::cout << OutputPack<void, int, int>::OUTPUT_COUNT << " == 0\n";

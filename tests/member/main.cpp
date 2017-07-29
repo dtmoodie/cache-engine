@@ -130,7 +130,23 @@ BOOST_AUTO_TEST_CASE(member_apply_with_owner) {
     BOOST_REQUIRE_EQUAL(val1, val2);
     BOOST_REQUIRE_NE(old_out_hash, out1.m_hash);
     BOOST_REQUIRE_EQUAL(out1.m_hash, out2.m_hash);
+}
 
+BOOST_AUTO_TEST_CASE(mutate_hashed_object) {
+    MutateOutputObject obj1;
+    MutateOutputObject obj2;
+    
+    TestHashedOutputObject out1;
+    TestHashedOutputObject out2;
+    BOOST_REQUIRE_EQUAL(ce::getObjectHash(obj1), ce::getObjectHash(obj2));
+    ce::EXEC_MEMBER(&MutateOutputObject::mutate)(obj1, ce::makeOutput(out1));
+    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE_EQUAL(ce::getObjectHash(obj1), ce::getObjectHash(obj2));
+    ce::EXEC_MEMBER(&MutateOutputObject::mutate)(obj2, ce::makeOutput(out2));
+    BOOST_REQUIRE(ce::wasCacheUsedLast() == true);
+    BOOST_REQUIRE_EQUAL(out1.hash, out2.hash);
+    BOOST_REQUIRE_EQUAL(out1.data, out2.data);
+    BOOST_REQUIRE_EQUAL(ce::getObjectHash(obj1), ce::getObjectHash(obj2));
 }
 
 BOOST_AUTO_TEST_CASE(cleanup) {

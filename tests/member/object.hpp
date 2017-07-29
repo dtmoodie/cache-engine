@@ -1,6 +1,10 @@
 #include <ce/execute.hpp>
 #include <ce/Executor.hpp>
-
+struct MutateOutputObject;
+namespace ce{
+    const Hash_t& getObjectHash(const MutateOutputObject& obj);
+    Hash_t& getObjectHash(MutateOutputObject& obj);
+}
 struct TestObject{
     TestObject(int init = 0): member1(init){}
     static double staticFunctionWithReturn(){
@@ -27,6 +31,33 @@ struct TestObject{
     int member1;
 };
 
+struct TestOutputObject{
+    int data;
+};
+
+struct TestHashedOutputObject: public TestOutputObject {
+    ce::Hash_t hash;
+};
+
+struct MutateOutputObject{
+    void mutate(TestOutputObject& obj){
+        obj.data = member;
+    }
+    void set(int val){member = val;}
+protected:
+    friend ce::Hash_t& ce::getObjectHash(MutateOutputObject& obj);
+    friend const ce::Hash_t& ce::getObjectHash(const MutateOutputObject& obj);
+    ce::Hash_t hash = ce::classHash<MutateOutputObject>();
+    int member;
+};
+
+struct MemoizedObject{
+    int foo(){
+        
+    }
+};
+
+
 struct TestHashedObject: public TestObject {
     ce::Hash_t m_hash = ce::classHash<TestHashedObject>();
 };
@@ -35,13 +66,32 @@ namespace ce{
     TestHashedObject& getObjectRef(TestHashedObject& obj){
         return obj;
     }
+
     const TestHashedObject& getObjectRef(const TestHashedObject& obj) {
         return obj;
     }
+
     Hash_t& getObjectHash(TestHashedObject& obj){
         return obj.m_hash;
     }
+
     const Hash_t& getObjectHash(const TestHashedObject& obj) {
         return obj.m_hash;
+    }
+    
+    HashedOutput<TestHashedOutputObject&> makeOutput(TestHashedOutputObject& ref) {
+        return {ref, ref.hash};
+    }
+    Hash_t& getObjectHash(MutateOutputObject& obj){
+        return obj.hash;
+    }
+    const Hash_t& getObjectHash(const MutateOutputObject& obj){
+        return obj.hash;
+    }
+    MutateOutputObject& getObjectRef(MutateOutputObject& obj){
+        return obj;
+    }
+    const MutateOutputObject& getObjectRef(const MutateOutputObject& obj) {
+        return obj;
     }
 }
