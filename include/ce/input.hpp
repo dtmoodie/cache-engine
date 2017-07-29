@@ -24,8 +24,23 @@ struct HashedInput {
     operator std::remove_reference_t<T>&() { return data; }
     operator const std::remove_reference_t<T> &() const { return data; }
 
-    size_t hash;
+    Hash_t hash;
     T data;
+};
+
+template<class T>
+struct HashedInput<T&>{
+    
+    HashedInput(T& ref, Hash_t in_hash = generateHash()) :
+        data(ref),
+        hash(in_hash){
+    }
+
+    operator std::remove_reference_t<T>&() { return data; }
+    operator const std::remove_reference_t<T> &() const { return data; }
+
+    Hash_t hash;
+    T& data;
 };
 
 
@@ -34,7 +49,7 @@ template<class T, class... Args> HashedInput<T> makeInput(Args&&... args) {
 }
 
 template<class T> HashedInput<T&> wrapInput(T& data){
-    return HashedInput<T&>(data);
+    return HashedInput<T&>(data, generateHash(data));
 }
 
 template<class T> 

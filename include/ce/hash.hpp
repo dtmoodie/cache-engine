@@ -1,62 +1,44 @@
 #pragma once
+
+#include <vector>
 namespace ce {
 // lolol poormans hash for now
-size_t generateHash() {
-    static size_t count = 0;
-    return ++count;
-}
+inline Hash_t generateHash();
 
 template<class T>
-std::size_t combineHash(std::size_t seed, const T& v) {
-    std::hash<T> hasher;
-    seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    return seed;
-}
-
-std::size_t combineHash(std::size_t seed, std::size_t hash) {
-    seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    return seed;
-}
+inline Hash_t generateHash(const T& data);
 
 template<class T>
-size_t generateHash(std::size_t seed, T&& v) {
-    return combineHash(seed, std::forward<T>(v));
-}
-std::size_t generateHash(std::size_t seed) {
-    return seed;
-}
+inline Hash_t combineHash(std::size_t seed, const T& v);
+
+inline Hash_t combineHash(std::size_t seed, std::size_t hash);
+
+template<class T>
+inline Hash_t generateHash(std::size_t seed, T&& v);
+
+inline Hash_t generateHash(std::size_t seed);
+
+template<class T>
+inline Hash_t generateHash(const std::vector<T>& data);
 
 template<class T, class R, class... FArgs>
-std::size_t generateHash(R(T::*func)(FArgs...)) {
-    std::hash<R(T::*)(FArgs...)> hasher;
-    return hasher(func);
-}
+inline Hash_t generateHash(R(T::*func)(FArgs...));
+
 template<class R, class... FArgs>
-std::size_t generateHash(R(*func)(FArgs...)) {
-    return reinterpret_cast<std::size_t>((void*)func);
-}
+inline Hash_t generateHash(R(*func)(FArgs...));
 
 template<class T, class...Args>
-size_t generateHash(std::size_t seed, T&& v, Args&&... args) {
-    return generateHash(combineHash(seed, std::forward<T>(v)), std::forward<Args>(args)...);
-}
+inline Hash_t generateHash(std::size_t seed, T&& v, Args&&... args);
 
 template<class T> struct ClassHasher {
-    static constexpr const char* name() {
-        return __FUNCTION__;
-    }
-    static constexpr uint32_t hash() {
-        return ct::ctcrc32(__FUNCTION__);
-    }
+    static inline constexpr const char* name();
+    static inline constexpr uint32_t hash();
 };
 
 template<class T>
-constexpr uint32_t classHash() {
-    return ClassHasher<T>::hash();
-}
-template<class T>
-constexpr const char* className() {
-    return ClassHasher<T>::name();
-}
+inline constexpr uint32_t classHash();
 
+template<class T>
+inline constexpr const char* className();
 }
+#include "detail/hash.hpp"
