@@ -72,6 +72,11 @@ size_t combineHash(size_t seed, const HashedInput<T>& v) {
     return seed;
 }
 
+template<class T>
+size_t generateHash(const HashedInput<T>& v){
+    return v.hash;
+}
+
 template<class T> 
 T& get(HashedInput<T>& data) {
     return data.data;

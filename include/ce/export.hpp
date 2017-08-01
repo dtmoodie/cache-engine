@@ -7,7 +7,3 @@
 #else
 #  define CE_EXPORT
 #endif
-
-namespace ce{
-    typedef size_t size_t;
-}

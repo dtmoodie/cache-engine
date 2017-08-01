@@ -9,9 +9,15 @@ template<class T>
 inline size_t generateHash(const T& data);
 
 template<class T>
-inline size_t combineHash(size_t seed, const T& v);
+inline size_t generateHash(const T* data, size_t N);
+
+template<class T>
+inline size_t combineHash(size_t seed, T&& v);
 
 inline size_t combineHash(size_t seed, size_t hash);
+
+template<class T, class...Args>
+inline size_t combineHash(size_t seed, T&& arg, Args&&... args);
 
 template<class T>
 inline size_t generateHash(size_t seed, T&& v);

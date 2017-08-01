@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-
+set(CMAKE_DEBUG_POSTFIX "d")
 if(NOT MSVC)
 list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
 endif()
@@ -56,3 +56,14 @@ if(Boost_UNIT_TEST_FRAMEWORK_FOUND)
 	target_link_libraries(member_function_test ce)
 	target_include_directories(member_function_test PUBLIC $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>)
 ENDIF()
+
+install(DIRECTORY include/
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.hpp"
+)
+
+install(DIRECTORY external/ct/include/
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.hpp"
+)
+

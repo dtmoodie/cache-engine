@@ -1,5 +1,5 @@
 #pragma once
-
+#include <ct/String.hpp>
 namespace ce{
     size_t generateHash() {
         static size_t count = 0;
@@ -13,7 +13,15 @@ namespace ce{
     }
 
     template<class T>
-    size_t combineHash(size_t seed, const T& v) {
+    size_t generateHash(const T* data, size_t N){
+        size_t hash = 0;
+        for(size_t i = 0; i < N; ++i)
+            hash = combineHash(hash, generateHash(data[i]));
+        return hash;
+    }
+
+    template<class T>
+    size_t combineHash(size_t seed, T&& v) {
         seed ^= generateHash(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         return seed;
     }
@@ -22,7 +30,14 @@ namespace ce{
         seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         return seed;
     }
-
+    
+    template<class T, class...Args>
+    size_t combineHash(size_t seed, T&& arg, Args&&... args){
+        seed = combineHash(seed, std::forward<T>(arg));
+        seed = combineHash(seed, std::forward<Args>(args)...);
+        return seed;
+    }
+    
     template<class T>
     size_t generateHash(size_t seed, T&& v) {
         return combineHash(seed, std::forward<T>(v));
@@ -33,11 +48,10 @@ namespace ce{
     }
 
     template<class T>
-    size_t generateHash(const std::vector<T>& data) {
-        std::hash<T> hasher;
+    inline size_t generateHash(const std::vector<T>& data) {
         size_t hash = 0;
         for (const auto& val : data) {
-            hash = combineHash(hash, hasher(val));
+            hash = combineHash(hash, generateHash(val));
         }
         return hash;
     }
