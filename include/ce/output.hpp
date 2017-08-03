@@ -81,5 +81,18 @@ template<class T>
 T& get(HashedOutput<T>& data) {
     return data.m_ref;
 }
+template<class T>
+constexpr bool outputDetectorHelper(ce::HashedOutput<T>* ptr = 0) {
+    return true;
+}
+template<class T>
+constexpr bool outputDetectorHelper(T* ptr = 0) {
+    return false;
+}
+
+template<class T>
+constexpr bool outputDetector() {
+    return outputDetectorHelper(static_cast<T*>(0));
+}
 
 } // namespace ce
