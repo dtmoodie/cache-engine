@@ -50,7 +50,14 @@ void foo7(const std::vector<int>& input, double& output){
         output += val;
     }
 }
+template<class FSig, class... Args> struct TestClass{
+};
 
+template<class R, class ... FArgs, class ... Args> struct TestClass<R(FArgs...), Args...>{
+    TestClass(){
+        std::cout << "Correct instantiation" << std::endl;
+    }
+};
 BOOST_AUTO_TEST_CASE(initialize){
     ce::ICacheEngine::setEngine(ce::ICacheEngine::create());
 }

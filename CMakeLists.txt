@@ -57,6 +57,9 @@ if(Boost_UNIT_TEST_FRAMEWORK_FOUND)
 	target_include_directories(member_function_test PUBLIC $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>)
 ENDIF()
 
+ADD_EXECUTABLE(constexpr_test "tests/constexpr/main.cpp")
+target_link_libraries(constexpr_test ce)
+
 install(DIRECTORY include/
     DESTINATION include
     FILES_MATCHING PATTERN "*.hpp"

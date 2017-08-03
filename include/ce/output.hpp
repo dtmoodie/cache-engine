@@ -55,9 +55,19 @@ HashedOutput<T*> makeOutput(T* ptr) {
 	return HashedOutput<T*>(ptr);
 }
 
+template<class T>
+size_t generateHash(const HashedOutput<T>& output){
+    return 0;
+}
 
 template<class T>
 size_t combineHash(size_t seed, const HashedOutput<T>& v) {
+    (void)v;
+    return seed;
+}
+
+template<class T>
+size_t combineHash(size_t seed, HashedOutput<T>&& v) {
     (void)v;
     return seed;
 }

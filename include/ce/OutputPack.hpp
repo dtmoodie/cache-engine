@@ -3,13 +3,84 @@
 #include <ce/output.hpp>
 
 namespace ce {
-	template<class Enable, class T, class...Args> struct OutputPack : public OutputPack<void, Args...> {
-		enum {
-			OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
-		};
-	};
+    template<class Enable, class FSig, class T, class... Args> 
+    struct OutputPack{
+        enum {
+            OUTPUT_COUNT = OutputPack<void, FSig, Args...>::OUTPUT_COUNT
+        };
+        template<class TupleType>
+        static void setOutputs(size_t hash, TupleType& result, Args&... out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& result, Args&... out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+    };
+    template<class R, class ... FArgs, class T, class ... Args>
+    struct OutputPack< std::enable_if_t<OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT != 0>, R(FArgs...), T, Args...> {
+        enum {
+            OUTPUT_COUNT = OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT
+        };
+        typedef typename OutputPack<void, R(FArgs...), Args...>::types types;
 
-	template<class T> struct OutputPack<void, HashedOutput<T>> {
+        template<class TupleType>
+        static void setOutputs(size_t hash, TupleType& result, T& arg, Args&... out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& result, T& arg, Args&... out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+    };
+
+    template<class FSig, class T, class ... Args>
+    struct OutputPack<std::enable_if_t<OutputPack<void, FSig, Args...>::OUTPUT_COUNT != 0>, FSig, T, Args...>{
+        enum {
+            OUTPUT_COUNT = OutputPack<void, FSig, Args...>::OUTPUT_COUNT
+        };
+        typedef typename OutputPack<void, FSig, Args...>::types types;
+
+        template<class TupleType>
+        static void setOutputs(size_t hash, TupleType& result, Args&... out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& result, Args&... out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+    };
+
+    template<class FSig, class T> struct OutputPack<void, FSig, T> {
+        enum {
+            OUTPUT_COUNT = 0
+        };
+        template<class TupleType>
+        static void setOutputs(size_t hash, TupleType& result, T& out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& result, T& out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+    };
+    
+	/*template<class Enable, class FSig, class T, class...Args> 
+    struct OutputPack : public OutputPack<void, FSig, Args...> {
+		enum {
+			OUTPUT_COUNT = OutputPack<void, FSig, Args...>::OUTPUT_COUNT
+		};
+        template<class TupleType>
+        static void setOutputs(size_t hash, TupleType& result, Args&&... out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& result, Args&&... out) {
+            std::cout << "This should never be called" << std::endl;
+        }
+	};*/
+
+	template<class T, class R, class ... FArgs> struct OutputPack<void, R(FArgs...), HashedOutput<T>> {
 		enum {
 			OUTPUT_COUNT = 1
 		};
@@ -27,29 +98,30 @@ namespace ce {
 		}
 	};
 
-	template<class T, class ... Args> struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT != 0>::type, HashedOutput<T>, Args...> : public OutputPack<void, Args...> {
+	template<class T, class R, class ... FArgs, class ... Args> 
+    struct OutputPack<typename std::enable_if<OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT != 0>::type, R(FArgs...), HashedOutput<T>, Args...> : public OutputPack<void, R(FArgs...), Args...> {
 		enum {
-			OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
+			OUTPUT_COUNT = OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT + 1
 		};
-		typedef typename append_to_tupple<std::decay_t<T>, typename OutputPack<void, Args...>::types>::type types;
+		typedef typename append_to_tupple<std::decay_t<T>, typename OutputPack<void, R(FArgs...), Args...>::types>::type types;
 
 		template<typename TupleType>
 		static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args) {
 			ce::get(out) = std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT >(result);
 			out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OUTPUT_COUNT);
-			OutputPack<void, Args...>::setOutputs(hash, result, args...);
+			OutputPack<void, R(FArgs...), Args...>::setOutputs(hash, result, args...);
 		}
 
 		template<typename TupleType>
 		static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args) {
 			std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT >(result) = ce::get(out);
 			out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OUTPUT_COUNT);
-			OutputPack<void, Args...>::saveOutputs(hash, result, args...);
+			OutputPack<void, R(FArgs...), Args...>::saveOutputs(hash, result, args...);
 		}
 	};
 
-	template<class T, class ... Args>
-	struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type, HashedOutput<T>, Args...> : public OutputPack<void, Args...> {
+	template<class T, class R, class...FArgs, class ... Args>
+	struct OutputPack<typename std::enable_if<OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT == 0>::type, R(FArgs...), HashedOutput<T>, Args...> : public OutputPack<void, R(FArgs...), Args...> {
 		enum {
 			OUTPUT_COUNT = 1
 		};
@@ -57,39 +129,39 @@ namespace ce {
 
 		template<class TupleType>
 		static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args) {
-			ce::get(out) = std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result);
-			out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1);
-			OutputPack<void, Args...>::setOutputs(hash, result, args...);
+			ce::get(out) = std::get<std::tuple_size<TupleType>::value - OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT - 1>(result);
+			out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT - 1);
+			OutputPack<void, R(FArgs...), Args...>::setOutputs(hash, result, args...);
 		}
 
 		template<class TupleType>
 		static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args) {
-			std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result) = ce::get(out);
-			out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1);
-			OutputPack<void, Args...>::saveOutputs(hash, result, args...);
+			std::get<std::tuple_size<TupleType>::value - OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT - 1>(result) = ce::get(out);
+			out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT - 1);
+			OutputPack<void, R(FArgs...), Args...>::saveOutputs(hash, result, args...);
 		}
 	};
 
-	template<class T, class ... Args>
-	struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT != 0>::type, T, Args...> : public OutputPack<void, Args...> {
+	template<class T, class R, class... FArgs, class ... Args>
+	struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT != 0>::type, R(FArgs...), T, Args...> : public OutputPack<void, R(FArgs...), Args...> {
 		enum {
-			OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
+			OUTPUT_COUNT = OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT
 		};
-		typedef typename OutputPack<void, Args...>::types types;
+		typedef typename OutputPack<void, R(FArgs...), Args...>::types types;
 		//typedef typename convert_in_tuple<types>::type TupleType;
 
 		template<typename TupleType>
 		static void setOutputs(size_t hash, TupleType& result, T&, Args&... args) {
-			OutputPack<void, Args...>::setOutputs(hash, result, args...);
+			OutputPack<void, R(FArgs...), Args...>::setOutputs(hash, result, args...);
 		}
 
 		template<typename TupleType>
 		static void saveOutputs(size_t hash, TupleType& result, T&, Args&... args) {
-			OutputPack<void, Args...>::saveOutputs(hash, result, args...);
+			OutputPack<void, R(FArgs...), Args...>::saveOutputs(hash, result, args...);
 		}
 	};
 
-	template<class T> struct OutputPack<void, T> {
+	template<class T, class R, class ... FArgs> struct OutputPack<void, R(FArgs...), T> {
 		enum {
 			OUTPUT_COUNT = 0
 		};
@@ -103,18 +175,18 @@ namespace ce {
 		}
 	};
 
-	template<class T, class ... Args>
-	struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type, T, Args...> : public OutputPack<void, Args...> {
+	template<class T, class R, class ... FArgs, class ... Args>
+	struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type, R(FArgs...), T, Args...> : public OutputPack<void, R(FArgs...), Args...> {
 		enum {
-			OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
+			OUTPUT_COUNT = OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT
 		};
 		template<class TupleType>
 		static void setOutputs(size_t hash, TupleType& result, T& out, Args&... args) {
-			OutputPack<void, Args...>::setOutputs(hash, result, args...);
+			OutputPack<void, R(FArgs...), Args...>::setOutputs(hash, result, args...);
 		}
 		template<class TupleType>
 		static void saveOutputs(size_t hash, TupleType& result, T& out, Args&... args) {
-			OutputPack<void, Args...>::saveOutputs(hash, result, args...);
+			OutputPack<void, R(FArgs...), Args...>::saveOutputs(hash, result, args...);
 		};
 
 	};

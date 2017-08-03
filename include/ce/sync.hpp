@@ -23,7 +23,8 @@ namespace ce{
         std::list<cudaEvent_t> m_pool;
     };
 
-template<> struct OutputPack<void, cudaStream_t> {
+template<class R, class ... FArgs> 
+struct OutputPack<void, R(FArgs...), cudaStream_t> {
     enum {
         OUTPUT_COUNT = 1
     };
@@ -46,8 +47,8 @@ template<> struct OutputPack<void, cudaStream_t> {
     }
 };
 
-template<class ... Args>
-struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT == 0>::type, cudaStream_t, Args...> : public OutputPack<void, Args...> {
+template<class R, class FArgs, class ... Args>
+struct OutputPack<typename std::enable_if<OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT == 0>::type, R(FArgs...), cudaStream_t, Args...> : public OutputPack<void, R(FArgs...), Args...> {
     enum {
         OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
     };

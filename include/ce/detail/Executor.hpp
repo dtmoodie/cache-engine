@@ -133,7 +133,7 @@ namespace ce{
         size_t& obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
-            typedef OutputPack<void, HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
+            typedef OutputPack<void, R(FArgs...), HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
             typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
             size_t hash = generateHash(obj_hash, FHash, args...);
             std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
@@ -171,13 +171,13 @@ namespace ce{
 
     template<size_t FHash, class T, class... FArgs>
     template<class T2, class ... Args>
-    typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type 
+    typename std::enable_if<OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type 
         ExecutionToken<FHash, T, void, FArgs...>::operator()(T2& object, Args&&...args) {
         T& obj = getObjectRef(object);
         size_t& obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
-            typedef OutputPack<void, std::remove_reference_t<Args>...> PackType;
+            typedef OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...> PackType;
             typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
             size_t hash = generateHash(obj_hash, args...);
             hash = combineHash(hash, FHash);
@@ -211,7 +211,7 @@ namespace ce{
 
     template<size_t FHash, class T, class... FArgs>
     template<class T2, class ... Args>
-    typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
+    typename std::enable_if<OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
         ExecutionToken<FHash, T, void, FArgs...>::operator()(T2& object, Args&&...args) {
         T& obj = getObjectRef(object);
         size_t& obj_hash = getObjectHash(object);
@@ -234,7 +234,7 @@ namespace ce{
         size_t obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
-            typedef OutputPack<void, HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
+            typedef OutputPack<void, R(FArgs...), HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
             typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
             size_t hash = generateHash(obj_hash, FHash, args...);
             std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
@@ -275,13 +275,13 @@ namespace ce{
 
     template<size_t FHash, class T, class... FArgs>
     template<class T2, class ... Args>
-    typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
+    typename std::enable_if<OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
         ConstExecutionToken<FHash, T, void, FArgs...>::operator()(const T2& object, Args&&...args) {
         const T& obj = getObjectRef(object);
         size_t obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
-            typedef OutputPack<void, std::remove_reference_t<Args>...> PackType;
+            typedef OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...> PackType;
             typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
             size_t hash = generateHash(obj_hash, args...);
             hash = combineHash(hash, FHash);
@@ -318,7 +318,7 @@ namespace ce{
 
     template<size_t FHash, class T, class... FArgs>
     template<class T2, class ... Args>
-    typename std::enable_if<OutputPack<void, std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
+    typename std::enable_if<OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
         ConstExecutionToken<FHash, T, void, FArgs...>::operator()(const T2& object, Args&&...args) {
         const T& obj = getObjectRef(object);
         (obj.*m_func)(ce::get(std::forward<Args>(args))...);
