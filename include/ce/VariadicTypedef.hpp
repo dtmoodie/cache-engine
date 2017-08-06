@@ -28,4 +28,10 @@ struct append_to_tupple<T, variadic_typedef<Args...> > {
     typedef variadic_typedef<T, Args...> type;
     typedef std::tuple<T, Args...> tuple_type;
 };
+template<typename ... Args>
+struct append_to_tupple<void, variadic_typedef<Args...> >{
+    typedef variadic_typedef<Args...> type;
+    typedef std::tuple<Args...> tuple_type;
+};
+
 }
