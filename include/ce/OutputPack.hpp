@@ -19,7 +19,7 @@ namespace ce {
     };
 
     template<class R, class ... FArgs, class T, class ... Args>
-    struct OutputPack< std::enable_if_t<OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT>, R(FArgs...), T, Args...> {
+    struct OutputPack< std::enable_if_t<OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT && !outputDetector<T>()>, R(FArgs...), T, Args...> {
         enum {
             OUTPUT_COUNT = OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT
         };
@@ -36,7 +36,7 @@ namespace ce {
     };
 
     template<class FSig, class T, class ... Args>
-    struct OutputPack<std::enable_if_t<OutputPack<void, FSig, Args...>::OUTPUT_COUNT>, FSig, T, Args...>{
+    struct OutputPack<std::enable_if_t<OutputPack<void, FSig, Args...>::OUTPUT_COUNT && !outputDetector<T>()>, FSig, T, Args...>{
         enum {
             OUTPUT_COUNT = OutputPack<void, FSig, Args...>::OUTPUT_COUNT
         };
@@ -65,21 +65,6 @@ namespace ce {
             std::cout << "This should never be called" << std::endl;
         }
     };
-    
-	/*template<class Enable, class FSig, class T, class...Args> 
-    struct OutputPack : public OutputPack<void, FSig, Args...> {
-		enum {
-			OUTPUT_COUNT = OutputPack<void, FSig, Args...>::OUTPUT_COUNT
-		};
-        template<class TupleType>
-        static void setOutputs(size_t hash, TupleType& result, Args&&... out) {
-            std::cout << "This should never be called" << std::endl;
-        }
-        template<class TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, Args&&... out) {
-            std::cout << "This should never be called" << std::endl;
-        }
-	};*/
 
 	template<class T, class R, class ... FArgs> 
     struct OutputPack<void, R(FArgs...), HashedOutput<T>> {
@@ -100,8 +85,8 @@ namespace ce {
 		}
 	};
 
-	template<class T, class R, class ... FArgs, class ... Args> 
-    struct OutputPack<typename std::enable_if<OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT>::type, R(FArgs...), HashedOutput<T>, Args...> : public OutputPack<void, R(FArgs...), Args...> {
+	template<class T1, class T, class R, class ... FArgs, class ... Args> 
+    struct OutputPack<typename std::enable_if<OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT != 0>::type, R(T1, FArgs...), HashedOutput<T>, Args...> : public OutputPack<void, R(FArgs...), Args...> {
 		enum {
 			OUTPUT_COUNT = OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT + 1
 		};
@@ -122,8 +107,8 @@ namespace ce {
 		}
 	};
 
-	template<class T, class R, class...FArgs, class ... Args>
-	struct OutputPack<typename std::enable_if<!OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT>::type, R(FArgs...), HashedOutput<T>, Args...> : public OutputPack<void, R(FArgs...), Args...> {
+	template<class T1, class T, class R, class...FArgs, class ... Args>
+	struct OutputPack<typename std::enable_if<!OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT>::type, R(T1, FArgs...), HashedOutput<T>, Args...> : public OutputPack<void, R(FArgs...), Args...> {
 		enum {
 			OUTPUT_COUNT = 1
 		};
@@ -145,7 +130,7 @@ namespace ce {
 	};
 
 	template<class FT, class T, class R, class... FArgs, class ... Args>
-	struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT != 0>::type, R(FT, FArgs...), T, Args...> : public OutputPack<void, R(FArgs...), Args...> {
+	struct OutputPack<typename std::enable_if<OutputPack<void, Args...>::OUTPUT_COUNT != 0 && !outputDetector<T>()>::type, R(FT, FArgs...), T, Args...> : public OutputPack<void, R(FArgs...), Args...> {
 		enum {
 			OUTPUT_COUNT = OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT
 		};
