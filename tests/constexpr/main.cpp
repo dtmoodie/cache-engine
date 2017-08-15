@@ -92,5 +92,6 @@ int main(int argc, char** argv){
     
     
     decltype(as::appendTypes<decltype(outputTypeImpl<int>()), decltype(outputTypeImpl<float>())>()) testoutput;
+    as::AppendTypes<int, float> testoutput2;
     return 0;
 }

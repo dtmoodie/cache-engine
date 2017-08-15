@@ -2,7 +2,11 @@
 #include <ce/VariadicTypedef.hpp>
 #include <ce/output.hpp>
 #include <ce/input.hpp>
+#include <ce/type_traits.hpp>
+
 namespace ce {
+    namespace as = type_traits::argument_specializations;
+
     template<class Enable, class FSig, class T, class... Args> 
     struct OutputPack{
         enum {
@@ -18,8 +22,9 @@ namespace ce {
         }
     };
 
-    template<class R, class ... FArgs, class T, class ... Args>
-    struct OutputPack< std::enable_if_t<OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT && !outputDetector<T>()>, R(FArgs...), T, Args...> {
+    template<class R, class F, class ... FArgs, class T, class ... Args>
+    struct OutputPack< std::enable_if_t<(as::countOutputs<Args...>() != 0 || as::countOutputs(static_cast<R(*)(FArgs...)>(nullptr))) && 
+                                         as::hasDefaultSpecialization<F, T>()>, R(F, FArgs...), T, Args...> {
         enum {
             OUTPUT_COUNT = OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT
         };
@@ -66,22 +71,70 @@ namespace ce {
         }
     };
 
-	template<class T, class R, class ... FArgs> 
-    struct OutputPack<void, R(FArgs...), HashedOutput<T>> {
+    template<class T>
+    void saveOutput(size_t hash, T& value, HashedOutput<T>& out){
+        value = ce::get(out);
+        out.m_hash = hash;
+    }
+
+    template<class T>
+    void setOutput(size_t hash, const T& value, HashedOutput<T>& out){
+        ce::get(out) = value;
+        out.m_hash = hash;
+    }
+
+    template<class T>
+    constexpr void* saveTypeImpl(T* value = nullptr){
+        return {};
+    }
+
+    template<class T>
+    constexpr T* saveTypeImpl(HashedOutput<T>* value = nullptr){
+        return {};
+    }
+
+    template<class T>
+    constexpr std::tuple<T>* combineTypes(T* ptr = nullptr, void* ptr2 = nullptr){
+        return {};
+    }
+    
+    template<class T>
+    constexpr std::tuple<T>* combineTypes(void* ptr = nullptr, T* ptr2 = nullptr) {
+        return{};
+    }
+
+    template<class T>
+    constexpr std::tuple<T>* combineTypes(T* ptr1 = nullptr, T* ptr2 = nullptr){
+        return {};
+    }
+
+    template<class T1, class T2>
+    using CombineTypes = std::remove_pointer_t<decltype(combineTypes(static_cast<T1*>(nullptr), static_cast<T2*>(nullptr)))>;
+
+    template< class T>
+    using SaveType = std::remove_pointer_t<decltype(outputTypeImpl(static_cast<T*>(nullptr)))>;
+    
+
+
+	template<class T, class F, class R>
+    struct OutputPack<void, R(F), T> {
 		enum {
-			OUTPUT_COUNT = 1
+			OUTPUT_COUNT = as::hasDefaultSpecialization<T, F>() ? 0 : 1;
 		};
-		typedef variadic_typedef<std::decay_t<T>> types;
+		typedef variadic_typedef<std::decay_t<SaveType<T>>> types;
 
 		template<class TupleType>
 		static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out) {
-			ce::get(out) = std::get<std::tuple_size<TupleType>::value - 1>(result);
-			out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
+            setOutput(combineHash(hash, std::tuple_size<TupleType>::value - 1),
+                      std::get<std::tuple_size<TupleType>::value - 1>(result),
+                      out);
 		}
+
 		template<class TupleType>
 		static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out) {
-			std::get<std::tuple_size<TupleType>::value - 1>(result) = ce::get(out);
-			out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
+            saveOutput(combineHash(hash, std::tuple_size<TupleType>::value - 1),
+                       std::get<std::tuple_size<TupleType>::value - 1>(result),
+                       out);
 		}
 	};
 
