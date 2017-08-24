@@ -2,43 +2,24 @@
 #include <ce/input.hpp>
 #include <ce/output.hpp>
 #include <ce/type_traits.hpp>
-//#define STATIC_ASSERT_MACRO(expr) static_assert(expr, #expr)
-
-// Test specializing on function signature
-
-/*namespace ce{
-template<class T1, class T, class R, class ... FArgs, class ... Args>
-    struct OutputPack<typename std::enable_if<!OutputPack<void, Args...>::OUTPUT_COUNT && !outputDetector<T>()>::type, R(T1, FArgs...), T, Args...> : public OutputPack<void, R(FArgs...), Args...> {
-        enum {
-            OUTPUT_COUNT = OutputPack<void, R(FArgs...), Args...>::OUTPUT_COUNT
-        };
-        template<class TupleType>
-        static void setOutputs(size_t hash, TupleType& result, T& out, Args&... args) {
-            OutputPack<void, R(FArgs...), Args...>::setOutputs(hash, result, args...);
-        }
-        template<class TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, T& out, Args&... args) {
-            OutputPack<void, R(FArgs...), Args...>::saveOutputs(hash, result, args...);
-        };
-    };
-}*/
 
 namespace ce{
 namespace type_traits{
 namespace argument_specializations {
     template<class T>
-    constexpr int countInputsImpl(ce::HashedInput<T>* ptr = nullptr) {
+    constexpr int countInputsImpl(const ce::HashedInput<T>* ptr = nullptr) {
         return 1;
     }
 
     template<class T>
-    constexpr int countInputsImpl(ce::HashedOutput<T>* ptr = nullptr) {
+    constexpr int countOutputsImpl(const ce::HashedOutput<T>* ptr = nullptr) {
         return 1;
     }
 }
 }
 }
 namespace as = ce::type_traits::argument_specializations;
+
 void foo1(int, int, int){
 }
 
@@ -62,7 +43,6 @@ constexpr auto outputType(std::tuple<T, Args...>* ptr = nullptr) ->
 }
 
 
-
 int main(int argc, char** argv){
     static_assert(as::countInputs<int, int, int>() == 0, "asdf");
     static_assert(as::countOutputs<int,int,int>() == 0, "asdf");
@@ -83,15 +63,21 @@ int main(int argc, char** argv){
     static_assert(as::countOutputs(&foo2) == 0, "asdf");
     static_assert(as::countInputs(&foo1) == 0, "asdf");
     static_assert(as::countInputs(&foo2) == 1, "asdf");
-       
-    decltype(as::appendTypes<void, int, int>()) test;
-    decltype(as::appendTypes<int, float, void, int, int>()) test2;
-    decltype(as::appendTypes<int, float, void, ce::HashedOutput<int>, int>()) test3;
-
-    outputTypeImpl(static_cast<int*>(nullptr));
-    
-    
-    decltype(as::appendTypes<decltype(outputTypeImpl<int>()), decltype(outputTypeImpl<float>())>()) testoutput;
-    as::AppendTypes<int, float> testoutput2;
+    as::enable_if_not_output<int, int>* ptr = nullptr;
+    //static_assert(ce::OutputPack<void, void(int), int>::OUTPUT_COUNT == 0, "asdf");
+    as::hasOutputSpecialization<ce::HashedOutput<int>>();
+    static_assert(as::hasOutputSpecialization<ce::HashedOutput<int>>() == true, "asdf");
+    static_assert((!as::hasOutputSpecialization<int>() && !as::hasOutputSpecialization<ce::HashedOutput<int>>()) == false, "asdf");
+    static_assert((as::hasOutputSpecialization<int>() || as::hasOutputSpecialization<ce::HashedOutput<int>>()) == true, "asdf");
+    {
+        as::enable_if_output<int, ce::HashedOutput<int>>* ptr = nullptr;
+        ce::ArgumentIterator<int(int), int>::printTypes();
+        ce::ArgumentIterator<int(int, float), int, float>::printTypes();
+        ce::ArgumentIterator<int(int, float), int, float>::printOutputTypes();
+        ce::ArgumentIterator<int(int, ce::HashedOutput<float>), int, float>::printOutputTypes();
+        ce::ArgumentIterator<int(int, float), int, ce::HashedOutput<int>>::printOutputTypes();
+        static_assert(ce::ArgumentIterator<int(int, ce::HashedOutput<float>), int, float>::OUTPUT_COUNT == 1, "asdf");
+    }
+    //static_assert(ce::OutputPack<void, void(int), ce::HashedOutput<int>>::OUTPUT_COUNT == 1, "asdf");
     return 0;
 }

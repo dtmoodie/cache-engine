@@ -26,7 +26,7 @@ namespace ce{
         std::list<cv::cuda::Event> m_pool;
     };
 
-    template<class R, class ... FArgs> struct OutputPack<void, R(FArgs...), cv::cuda::Stream> {
+    /*template<class R, class ... FArgs> struct OutputPack<void, R(FArgs...), cv::cuda::Stream> {
         enum {
             OUTPUT_COUNT = 1
         };
@@ -49,6 +49,6 @@ namespace ce{
                 ev->record(stream);
             }
         }
-    };
+    };*/
 }
 #endif

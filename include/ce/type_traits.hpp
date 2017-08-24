@@ -4,6 +4,34 @@ namespace ce{
 namespace type_traits{
 namespace argument_specializations{
 
+    template<class T, bool Select>
+    struct SaveTypeImpl{
+    };
+
+    template<class T>
+    struct SaveTypeImpl<T, true> {
+        typedef T type;
+    };
+
+    template<class T>
+    struct SaveTypeImpl<T, false> {
+        typedef void type;
+    };
+
+
+    template<class T1, class T2>
+    struct SelectSaveType{};
+
+    template<class T>
+    struct SelectSaveType<T, void>{
+        typedef T type;
+    };
+
+    template<class T>
+    struct SelectSaveType<void, T> {
+        typedef T type;
+    };
+
     template<class T>
     constexpr bool hasDefaultSpecialization(const T* ptr = nullptr){
         return (!hasOutputSpecialization<T>() && !hasInputSpecialization<T>());
@@ -45,6 +73,11 @@ namespace argument_specializations{
         return countInputsImpl(static_cast<std::tuple<R, Args...>*>(nullptr));
     }
 
+    template<class ... Args>
+    constexpr int countInputs(void(*func)(Args...)) {
+        return countInputsImpl(static_cast<std::tuple<Args...>*>(nullptr));
+    }
+
     template<class T>
     constexpr int countOutputsImpl(const T* ptr = nullptr){
         return 0;
@@ -63,34 +96,28 @@ namespace argument_specializations{
 
     template<class R, class ... Args>
     constexpr int countOutputs(R(*func)(Args...)){
-        return countOutputsImpl(static_cast<std::tuple<R, Args...>*>(nullptr));
+        return countOutputsImpl(static_cast<std::tuple<Args...>*>(nullptr)) + 1;
+    }
+
+    template<class ... Args>
+    constexpr int countOutputs(void(*func)(Args...)) {
+        return countOutputsImpl(static_cast<std::tuple<Args...>*>(nullptr));
     }
 
     template<class T>
-    ce::variadic_typedef<T> appendTypes(T* ptr = nullptr){
-        return {};
-    }
+    struct SaveType {
+        typedef typename SaveTypeImpl<T, hasOutputSpecialization<T>()>::type type;
+    };
 
-    template<class T1, class T2>
-    ce::variadic_typedef<T1, T2> appendTypes(T1* ptr1, T2* ptr2){
-        return {};
-    }
+    template<class T>
+    using SaveType_t = typename SaveType<T>::type;
 
-    template<class T, class ... Args> 
-    typename ce::append_to_tupple<T, decltype(appendTypes<Args...>())>::type appendTypes(T* ptr = nullptr, std::tuple<Args...>* args = nullptr){
-        return {};
-    }
+    template<class T, class F>
+    using enable_if_output = typename std::enable_if<hasOutputSpecialization<T>() || hasOutputSpecialization<F>()>::type;
 
-    template<class T, class ... Args>
-    decltype(appendTypes<Args...>()) appendTypes(std::enable_if_t<std::is_same_v<T, void>>* ptr = nullptr, std::tuple<Args...>* args = nullptr) {
-        return{};
-    }
-
-    template<class T1, class T2>
-    using AppendTypes = std::remove_pointer_t<decltype(appendTypes(static_cast<T1*>(nullptr), static_cast<T2*>(nullptr)))>;
+    template<class T, class F>
+    using enable_if_not_output = typename std::enable_if<(!hasOutputSpecialization<T>() && !hasOutputSpecialization<F>())>::type;
 
 } // namespace ce::type_traits::argument_specializations
 } // namespace ce::type_traits
 } // namespace ce
-
-#include "detail/type_traits.hpp"
