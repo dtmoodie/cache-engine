@@ -11,8 +11,8 @@ namespace ce {
     typename std::enable_if<OutputPack<void, void(FArgs...),std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(*func)(FArgs...), Args&&...args) {
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
-            typedef OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...> PackType;
-            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
+            typedef OutputPack<void(FArgs...), std::remove_reference_t<Args>...> PackType;
+            typedef typename PackType::SaveTuple output_tuple_type;
             size_t hash = generateHash(func);
             hash = generateHash(hash, std::forward<Args>(args)...);
 #ifdef CE_DEBUG_CACHE_USAGE 
@@ -50,8 +50,8 @@ namespace ce {
     HashedOutput<R> exec(R(*func)(FArgs...), Args&&...args) {
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
-            typedef OutputPack<void, R(FArgs...), HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
-            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
+            typedef OutputPack<R(FArgs...), std::remove_reference_t<Args>...> PackType;
+            typedef typename PackType::SaveTuple output_tuple_type;
             size_t hash = generateHash(func);
             hash = generateHash(hash, std::forward<Args>(args)...);
 #ifdef CE_DEBUG_CACHE_USAGE 

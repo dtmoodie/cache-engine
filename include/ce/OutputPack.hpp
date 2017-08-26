@@ -8,66 +8,137 @@
 namespace ce {
     namespace as = type_traits::argument_specializations;
 
-	template<class T>
-    struct DefaultOutputPack{
-		enum {
-			OUTPUT_COUNT = 0;
-		};
-
-		template<class TupleType>
-		static void setOutputs(size_t hash, TupleType& result, T& out) {
-		}
-
-		template<class TupleType>
-		static void saveOutputs(size_t hash, TupleType& result, T& out) {        
-		}
-	};
-
-    
-
-    template<class T, size_t N> 
-    struct OutputPackSelector{
-        
-    };
-
-    template<class T>
-    struct OutputPackSelector<T, 0> {
-        typedef DefaultOutputPack<T> PackType;
-    };
-
     template<class FSig, class ... Args>
-    struct ArgumentIterator{
+    struct ArgumentIterator {
         static void printTypes(){
         }
     };
 
-    template<class R, class F, class Arg>
-    struct ArgumentIterator<R(F), Arg>{
+    template<class F, class Arg>
+    struct ArgumentIterator<void(F), Arg>{
+        typedef as::SaveType<F, Arg> SaveType;
+        typedef variadic_typedef<typename SaveType::type> SavePack;
+        typedef typename convert_in_tuple<SavePack>::type SaveTuple;
+
         enum {
-            OUTPUT_COUNT = (as::hasOutputSpecialization<F>() || as::hasOutputSpecialization<Arg>()) ? 1 : 0
+            IS_OUTPUT = SaveType::IS_OUTPUT,
+            OUTPUT_COUNT =  IS_OUTPUT ? 1 : 0
         };
+        static void debugPrint(){
+            std::cout << "FArg: " << typeid(F).name() << " Arg: " << typeid(Arg).name() << (IS_OUTPUT ? " - OUTPUT" : " - INPUT") << std::endl;
+            std::cout << "  SaveType:      " << typeid(SaveType).name() << std::endl;
+            std::cout << "  SaveType::type " << typeid(typename SaveType::type).name() << std::endl;
+            std::cout << "  SavePack:      " << typeid(SavePack).name() << std::endl;
+            std::cout << "  SaveTuple:     " << typeid(SaveTuple).name() << std::endl;
+        }
         static void printTypes() {
             std::cout << typeid(F).name() << " " << typeid(Arg).name() << std::endl;
         }
         static void printOutputTypes(){
-            std::cout << typeid(as::SaveType_t<F>).name() << " " << typeid(as::SaveType_t<Arg>).name() << std::endl;
+            if(IS_OUTPUT){
+                std::cout << "Function output: " << typeid(F).name() << " will be saved as ";
+                std::cout << typeid(typename SaveType::type).name() << " for input " << typeid(Arg).name() << std::endl;
+            }else{
+                std::cout << "Function input: " << typeid(F).name() << " will not be saved" << std::endl;
+            }
+        }
+        template<class TupleType>
+        static void setOutputs(size_t hash, TupleType& tuple, Arg& arg) {
+
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& tuple, Arg& arg) {
+
         }
     };
 
-    template<class R, class F, class ... FArgs, class Arg, class... Args>
-    struct ArgumentIterator<R(F, FArgs...), Arg, Args...>{
-        enum{
-            OUTPUT_COUNT = ArgumentIterator<R(FArgs...), Args...>::OUTPUT_COUNT + (as::hasOutputSpecialization<F>() || as::hasOutputSpecialization<Arg>()) ? 1 : 0
+    template<class F, class ... FArgs, class Arg, class... Args>
+    struct ArgumentIterator<void(F, FArgs...), Arg, Args...>{
+        typedef as::SaveType<F, Arg> SaveType;
+        typedef ArgumentIterator<void(FArgs...), Args...> Parent;
+        typedef typename append_to_tupple<typename SaveType::type, typename Parent::SavePack>::type SavePack;
+        typedef typename convert_in_tuple<SavePack>::type SaveTuple;
+        enum {
+            IS_OUTPUT = SaveType::IS_OUTPUT,
+            OUTPUT_COUNT = Parent::OUTPUT_COUNT + IS_OUTPUT ? 1 : 0
         };
-
+        
+        static void debugPrint() {
+            Parent::debugPrint();
+            std::cout << std::endl;
+            std::cout << "FArg: " << typeid(F).name() << " Arg: " << typeid(Arg).name() << (IS_OUTPUT ? " - OUTPUT" : " - INPUT") << std::endl;
+            std::cout << "  SaveType:      " << typeid(SaveType).name() << std::endl;
+            std::cout << "  SaveType::type " << typeid(typename SaveType::type).name() << std::endl;
+            std::cout << "  SavePack:      " << typeid(SavePack).name() << std::endl;
+            std::cout << "  SaveTuple:     " << typeid(SaveTuple).name() << std::endl << std::endl;
+        }
         static void printTypes(){
             std::cout << typeid(F).name() << " " << typeid(Arg).name() << std::endl;
-            ArgumentIterator<R(FArgs...), Args...>::printTypes();
+            ArgumentIterator<void(FArgs...), Args...>::printTypes();
         }
         static void printOutputTypes() {
-            std::cout << typeid(as::SaveType_t<F>).name() << " " << typeid(as::SaveType_t<Arg>).name() << std::endl;
-            ArgumentIterator<R(FArgs...), Args...>::printOutputTypes();
+            if(IS_OUTPUT){
+                std::cout << "Function output: " << typeid(F).name() << " will be saved as ";
+                std::cout << typeid(typename SaveType::type).name() << " for input " << typeid(Arg).name() << std::endl;
+            }else{
+                std::cout << "Function input: " << typeid(F).name() << " will not be saved" << std::endl;
+            }
+            ArgumentIterator<void(FArgs...), Args...>::printOutputTypes();
+        }
+        template<class TupleType>
+        static void setOutputs(size_t hash, TupleType& tuple, Args&... args){
+        
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& tuple, Args&... args) {
+
         }
     };
 
+
+    template<class FSig, class ... Args>
+    struct OutputPack{};
+
+    template<class R, class... FArgs, class... Args>
+    struct OutputPack<R(FArgs...), Args...>{
+        typedef ArgumentIterator<void(FArgs...), Args...> ArgItr;
+        typedef typename ArgItr::SavePack ArgSavePack;
+        typedef typename append_to_tupple<R, ArgSavePack>::type SavePack;
+        typedef typename convert_in_tuple<SavePack>::type SaveTuple;
+        enum {
+            OUTPUT_COUNT = ArgItr::OUTPUT_COUNT + 1
+        };
+        template<class TupleType>
+        static void setOutputs(size_t hash, TupleType& tuple, HashedOutput<R>& ret, Args&... args){
+            ce::get(ret) = std::get<std::tuple_size<TupleType>::value - 1>(tuple);
+            ret.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
+            ArgItr::setOutputs(hash, tuple, args...);
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& tuple, HashedOutput<R>& ret, Args&... args) {
+            std::get<std::tuple_size<TupleType>::value - 1>(tuple) = ce::get(ret);
+            ret.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
+            ArgItr::saveOutputs(hash, tuple, args...);
+        }
+    };
+
+    template<class... FArgs, class... Args>
+    struct OutputPack<void(FArgs...), Args...>{
+        typedef ArgumentIterator<void(FArgs...), Args...> ArgItr;
+        typedef typename ArgItr::SavePack ArgSavePack;
+        typedef typename ArgSavePack SavePack;
+        typedef typename convert_in_tuple<SavePack>::type SaveTuple;
+        enum {
+            OUTPUT_COUNT = ArgItr::OUTPUT_COUNT
+        };
+
+        template<class TupleType>
+        static void setOutputs(size_t hash, TupleType& tuple, Args&... args) {
+            ArgItr::setOutputs(hash, tuple, args...);
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& tuple, Args&... args) {
+            ArgItr::saveOutputs(hash, tuple, args...);
+        }
+    };
 }

@@ -82,8 +82,8 @@ int main(){
     //std::cout << OutputPack<void, void(int), int>::OUTPUT_COUNT << " == 0\n";
     //std::cout << OutputPack<void, void(int, int), int, int>::OUTPUT_COUNT << " == 0\n";
     //std::cout << OutputPack<void, void(int, int), HashedInput<int>, HashedInput<int>>::OUTPUT_COUNT << " == 0\n";
-    std::cout << OutputPack<void, void(int), HashedOutput<int>>::OUTPUT_COUNT << " == 1\n";
-    std::cout << OutputPack<void, void(int, int), HashedOutput<int>, HashedOutput<int>>::OUTPUT_COUNT << " == 2\n";
+    std::cout << OutputPack<void(int), HashedOutput<int>>::OUTPUT_COUNT << " == 1\n";
+    std::cout << OutputPack<void(int, int), HashedOutput<int>, HashedOutput<int>>::OUTPUT_COUNT << " == 2\n";
 	
 
     //static_assert(!ce::function_traits::is_const(&bar::member), "member is non const");
@@ -98,7 +98,7 @@ int main(){
     std::cout << exec(bar::foo, 20) << std::endl;
     std::cout << exec(&bar::staticFunc, 0) << std::endl;
     bar cls;
-    auto executor = makeExecutor(cls);
+    /*auto executor = makeExecutor(cls);
     std::cout << EXEC_MEMBER(&bar::member)(executor, hashed) << std::endl;
     std::cout << EXEC_MEMBER(&bar::member)(executor, hashed) << std::endl;
     int value1 = 20, value2 = 10;
@@ -126,6 +126,6 @@ int main(){
     EXEC_MEMBER(&bar::member2)(executor, 0,1);
     EXEC_MEMBER(static_cast<void(bar::*)(int)>(&bar::overloaded))(executor, 1);
     EXEC_MEMBER(static_cast<void(bar::*)(float)>(&bar::overloaded))(executor, 1.f);
-    
+    */
     return 0;
 }

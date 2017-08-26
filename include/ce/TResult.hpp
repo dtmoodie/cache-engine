@@ -3,7 +3,8 @@
 #include <utility>
 
 namespace ce {
-template<class ... T> struct TResult : IResult {
+template<class ... T> 
+struct TResult : IResult {
     TResult(std::tuple<T...>&& arg) :
         values(std::move(arg)) {}
     TResult(T&&... args) :
@@ -14,7 +15,8 @@ template<class ... T> struct TResult : IResult {
     std::tuple<T...> values;
 };
 
-template<class...T> struct TResult<std::tuple<T...>> : IResult {
+template<class...T> 
+struct TResult<std::tuple<T...>> : IResult {
     TResult(std::tuple<T...>&& arg) :
         values(std::move(arg)) {}
     TResult(T&&... args) :
