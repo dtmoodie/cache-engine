@@ -43,12 +43,14 @@ namespace ce {
             }
         }
         template<class TupleType>
-        static void setOutputs(size_t hash, TupleType& tuple, Arg& arg) {
-
+        static void setOutputs(size_t hash, TupleType& result, Arg& out) {
+            ce::get(out) = std::get<std::tuple_size<TupleType>::value - 1>(result);
+            out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
         }
         template<class TupleType>
-        static void saveOutputs(size_t hash, TupleType& tuple, Arg& arg) {
-
+        static void saveOutputs(size_t hash, TupleType& result, Arg& out) {
+            std::get<std::tuple_size<TupleType>::value - 1>(result) = ce::get(out);
+            out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
         }
     };
 
@@ -86,12 +88,16 @@ namespace ce {
             ArgumentIterator<void(FArgs...), Args...>::printOutputTypes();
         }
         template<class TupleType>
-        static void setOutputs(size_t hash, TupleType& tuple, Args&... args){
-        
+        static void setOutputs(size_t hash, TupleType& result, Arg& out, Args&... args){
+            ce::get(out) = std::get<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(result);
+            out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1);
+            Parent::setOutputs(hash, result, args...);
         }
         template<class TupleType>
-        static void saveOutputs(size_t hash, TupleType& tuple, Args&... args) {
-
+        static void saveOutputs(size_t hash, TupleType& result, Arg& out, Args&... args) {
+            std::get<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(result) = ce::get(out);
+            out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1);
+            Parent::saveOutputs(hash, result, args...);
         }
     };
 
@@ -106,8 +112,12 @@ namespace ce {
         typedef typename append_to_tupple<R, ArgSavePack>::type SavePack;
         typedef typename convert_in_tuple<SavePack>::type SaveTuple;
         enum {
+            IS_OUTPUT = 0,
             OUTPUT_COUNT = ArgItr::OUTPUT_COUNT + 1
         };
+        static void debugPrint() {
+            AI::debugPrint();
+        }
         template<class TupleType>
         static void setOutputs(size_t hash, TupleType& tuple, HashedOutput<R>& ret, Args&... args){
             ce::get(ret) = std::get<std::tuple_size<TupleType>::value - 1>(tuple);
@@ -129,9 +139,12 @@ namespace ce {
         typedef typename ArgSavePack SavePack;
         typedef typename convert_in_tuple<SavePack>::type SaveTuple;
         enum {
+            IS_OUTPUT = 0,
             OUTPUT_COUNT = ArgItr::OUTPUT_COUNT
         };
-
+        static void debugPrint(){
+            ArgItr::debugPrint();
+        }
         template<class TupleType>
         static void setOutputs(size_t hash, TupleType& tuple, Args&... args) {
             ArgItr::setOutputs(hash, tuple, args...);

@@ -19,7 +19,7 @@ namespace argument_specializations{
     template<class FArg, class Arg>
     struct SaveType<FArg, ce::HashedOutput<Arg>> {
         enum { IS_OUTPUT = 1 };
-        typedef Arg type;
+        typedef std::remove_reference_t<Arg> type;
     };
 
     template<class Arg>

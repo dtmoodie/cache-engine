@@ -108,10 +108,10 @@ struct ExecutionToken<FHash, T, void, FArgs...> {
     ExecutionToken(void(T::*func)(FArgs...));
 
     template<class T2, class ... Args>
-    typename std::enable_if<OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type operator()(T2& object, Args&&...args);
+    typename std::enable_if<OutputPack<void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type operator()(T2& object, Args&&...args);
 
     template<class T2, class ... Args>
-    typename std::enable_if<OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type 
+    typename std::enable_if<OutputPack<void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type 
     operator()(T2& object, Args&&...args);
 
     void(T::*m_func)(FArgs...);
@@ -132,11 +132,11 @@ struct ConstExecutionToken<FHash, T, void, FArgs...> {
     ConstExecutionToken(void(T::*func)(FArgs...) const);
 
     template<class T2, class ... Args>
-    typename std::enable_if<OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type 
+    typename std::enable_if<OutputPack<void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type 
     operator()(const T2& object, Args&&...args);
 
     template<class T2, class ... Args>
-    typename std::enable_if<OutputPack<void, void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
+    typename std::enable_if<OutputPack<void(FArgs...), std::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
     operator()(const T2& object, Args&&...args);
 
     void(T::*m_func)(FArgs...) const;

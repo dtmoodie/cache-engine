@@ -98,7 +98,7 @@ int main(){
     std::cout << exec(bar::foo, 20) << std::endl;
     std::cout << exec(&bar::staticFunc, 0) << std::endl;
     bar cls;
-    /*auto executor = makeExecutor(cls);
+    auto executor = makeExecutor(cls);
     std::cout << EXEC_MEMBER(&bar::member)(executor, hashed) << std::endl;
     std::cout << EXEC_MEMBER(&bar::member)(executor, hashed) << std::endl;
     int value1 = 20, value2 = 10;
@@ -108,7 +108,7 @@ int main(){
     value1 = 100;
     value2 = 200;
     
-    EXEC_MEMBER(&bar::setter)(executor,makeOutput(value2), makeOutput(value1));
+    /*EXEC_MEMBER(&bar::setter)(executor,makeOutput(value2), makeOutput(value1));
     assert(value1 == 10);
     assert(value2 == 5);
     
