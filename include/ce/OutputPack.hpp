@@ -14,6 +14,25 @@ namespace ce {
         }
     };
 
+    template<int Idx, class Tuple, class T>
+    void setOutput(size_t hash, Tuple& result, T& arg){
+    
+    }
+    template<int Idx, class Tuple, class T>
+    void setOutput(size_t hash, Tuple& result, ce::HashedOutput<T>& arg) {
+        ce::get(arg) = std::get<Idx>(result);
+        arg.m_hash = hash;
+    }
+    template<int Idx, class Tuple, class T>
+    void saveOutput(size_t hash, Tuple& result, T& arg){
+    
+    }
+    template<int Idx, class Tuple, class T>
+    void saveOutput(size_t hash, Tuple& result, ce::HashedOutput<T>& arg) {
+        std::get<Idx>(result) = ce::get(arg);
+        arg.m_hash = hash;
+    }
+
     template<class F, class Arg>
     struct ArgumentIterator<void(F), Arg>{
         typedef as::SaveType<F, Arg> SaveType;
@@ -44,13 +63,11 @@ namespace ce {
         }
         template<class TupleType>
         static void setOutputs(size_t hash, TupleType& result, Arg& out) {
-            ce::get(out) = std::get<std::tuple_size<TupleType>::value - 1>(result);
-            out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
+            setOutput<std::tuple_size<TupleType>::value - 1>(combineHash(hash, std::tuple_size<TupleType>::value - 1), result, out);
         }
         template<class TupleType>
         static void saveOutputs(size_t hash, TupleType& result, Arg& out) {
-            std::get<std::tuple_size<TupleType>::value - 1>(result) = ce::get(out);
-            out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
+            saveOutput<std::tuple_size<TupleType>::value - 1>(combineHash(hash, std::tuple_size<TupleType>::value - 1), result, out);
         }
     };
 
@@ -89,14 +106,15 @@ namespace ce {
         }
         template<class TupleType>
         static void setOutputs(size_t hash, TupleType& result, Arg& out, Args&... args){
-            ce::get(out) = std::get<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(result);
-            out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1);
+            setOutput<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(
+                combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1), result, out);
             Parent::setOutputs(hash, result, args...);
         }
         template<class TupleType>
         static void saveOutputs(size_t hash, TupleType& result, Arg& out, Args&... args) {
-            std::get<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(result) = ce::get(out);
-            out.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1);
+            saveOutput<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(
+                combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1),
+                result, out);
             Parent::saveOutputs(hash, result, args...);
         }
     };
@@ -120,13 +138,13 @@ namespace ce {
         }
         template<class TupleType>
         static void setOutputs(size_t hash, TupleType& tuple, HashedOutput<R>& ret, Args&... args){
-            ce::get(ret) = std::get<std::tuple_size<TupleType>::value - 1>(tuple);
+            ce::get(ret) = std::get<0>(tuple);
             ret.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
             ArgItr::setOutputs(hash, tuple, args...);
         }
         template<class TupleType>
         static void saveOutputs(size_t hash, TupleType& tuple, HashedOutput<R>& ret, Args&... args) {
-            std::get<std::tuple_size<TupleType>::value - 1>(tuple) = ce::get(ret);
+            std::get<0>(tuple) = ce::get(ret);
             ret.m_hash = combineHash(hash, std::tuple_size<TupleType>::value - 1);
             ArgItr::saveOutputs(hash, tuple, args...);
         }
