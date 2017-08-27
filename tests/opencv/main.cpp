@@ -14,10 +14,41 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/cudawarping.hpp>
 #endif
+
+
+
 namespace ce{
+    namespace type_traits {
+        namespace argument_specializations {
+            template<class T>
+            struct remove_output{
+                typedef T type;
+            };
+
+            template<class T>
+            struct remove_output<ce::HashedOutput<T>>{
+                typedef std::remove_reference_t<T> type;
+            };
+
+
+            template<class T>
+            struct SaveType<cv::OutputArray, T> {
+                enum { IS_OUTPUT = 1 };
+                typedef typename remove_output<std::remove_reference_t<T>>::type type;
+            };
+        }
+    }
+
 size_t combineHash(size_t seed, const cv::_InputOutputArray& v) {
     (void)v;
     return seed;
+}
+namespace debug{
+    template<class R, class... FArgs, class... Args>
+    void debugExecute(R(*func)(FArgs...), Args&&...){
+        typedef ce::OutputPack<R(FArgs...), Args...> AI;
+        AI::debugPrint();
+    }
 }
 }
 int main(int argc, char** argv) {
@@ -33,8 +64,9 @@ int main(int argc, char** argv) {
         auto input = ce::makeInput<cv::cuda::GpuMat>(h_img);
 		if (!h_img.empty()) {
             auto output = ce::makeOutput(output_mat);
-			ce::exec(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream1);
-			ce::exec(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream2);
+            //ce::debug::debugExecute(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream1);
+            ce::exec(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream1);
+            /*ce::exec(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream2);
             
             auto mat_executor = ce::makeExecutor(output);
 
@@ -44,7 +76,7 @@ int main(int argc, char** argv) {
 
             executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(ce::makeInput(float_output), ce::makeOutput(corners), ce::makeEmptyInput(cv::noArray()), stream2);
             executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(ce::makeInput(float_output), ce::makeOutput(corners), ce::makeEmptyInput(cv::noArray()), stream1);
-
+            */
 
 		}
         stream1.waitForCompletion();
