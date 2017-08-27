@@ -7,10 +7,10 @@
 
 namespace ce{
 	
-	size_t combineHash(size_t seed, const cv::cuda::Stream& v) {
-		(void)v;
-		return seed;
-	}
+    size_t generateHash(const cv::cuda::Stream& data) {
+        (void)data;
+        return 0;
+    }
     struct CE_EXPORT CvEventPool {
         ~CvEventPool();
         static CvEventPool* instance();
@@ -25,30 +25,31 @@ namespace ce{
         CvEventPool();
         std::list<cv::cuda::Event> m_pool;
     };
-
-    /*template<class R, class ... FArgs> struct OutputPack<void, R(FArgs...), cv::cuda::Stream> {
-        enum {
-            OUTPUT_COUNT = 1
-        };
-        typedef variadic_typedef<CvEventPool::EventPtr> types;
-
-        template<class TupleType>
-        static void setOutputs(size_t hash,TupleType& result, cv::cuda::Stream& stream) {
-            (void)hash;
-            CvEventPool::EventPtr& ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
-            if(*(ev.m_stream) != stream)
-                stream.waitEvent(*ev);
+    template<int Idx, class Tuple, class T>
+    void setOutput(size_t hash, Tuple& result, cv::cuda::Stream& arg) {
+        (void)hash;
+        CvEventPool::EventPtr& ev = std::get<Idx>(result);
+        if(*(ev.m_stream) != arg)
+            arg.waitEvent(*ev);
+    }
+    template<int Idx, class Tuple, class T>
+    void saveOutput(size_t hash, Tuple& result, cv::cuda::Stream& arg) {
+        (void)hash;
+        if(stream){
+            CvEventPool::EventPtr& ev = std::get<Idx>(result);
+            ev.m_stream = std::make_unique<cv::cuda::Stream>(stream);
+            ev->record(stream);
         }
-
-        template<class TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, cv::cuda::Stream& stream) {
-            (void)hash;
-            if (stream) {
-                CvEventPool::EventPtr& ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
-                ev.m_stream = std::make_unique<cv::cuda::Stream>(stream);
-                ev->record(stream);
-            }
+    }
+    namespace type_traits {
+        namespace argument_specializations {
+            template<class T>
+            struct SaveType<cv::cuda::Stream&, T, 2>{
+                enum{IS_OUTPUT = 1};
+                typedef CvEventPool::EventPtr type;
+            };
         }
-    };*/
+    }
+    
 }
 #endif

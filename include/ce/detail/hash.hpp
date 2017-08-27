@@ -5,6 +5,10 @@ namespace ce{
         static size_t count = 0;
         return ++count;
     }
+    template<class T>
+    size_t generateHash(const ce::EmptyInput<T>& data){
+        return 0;
+    }
 
     template<class T>
     size_t generateHash(const T& data) {

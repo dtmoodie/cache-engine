@@ -16,23 +16,11 @@
 #endif
 
 
-
 namespace ce{
     namespace type_traits {
         namespace argument_specializations {
             template<class T>
-            struct remove_output{
-                typedef T type;
-            };
-
-            template<class T>
-            struct remove_output<ce::HashedOutput<T>>{
-                typedef std::remove_reference_t<T> type;
-            };
-
-
-            template<class T>
-            struct SaveType<cv::OutputArray, T> {
+            struct SaveType<cv::OutputArray, T, 2> {
                 enum { IS_OUTPUT = 1 };
                 typedef typename remove_output<std::remove_reference_t<T>>::type type;
             };
@@ -66,7 +54,7 @@ int main(int argc, char** argv) {
             auto output = ce::makeOutput(output_mat);
             //ce::debug::debugExecute(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream1);
             ce::exec(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream1);
-            /*ce::exec(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream2);
+            ce::exec(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream2);
             
             auto mat_executor = ce::makeExecutor(output);
 
@@ -76,8 +64,6 @@ int main(int argc, char** argv) {
 
             executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(ce::makeInput(float_output), ce::makeOutput(corners), ce::makeEmptyInput(cv::noArray()), stream2);
             executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(ce::makeInput(float_output), ce::makeOutput(corners), ce::makeEmptyInput(cv::noArray()), stream1);
-            */
-
 		}
         stream1.waitForCompletion();
         stream2.waitForCompletion();

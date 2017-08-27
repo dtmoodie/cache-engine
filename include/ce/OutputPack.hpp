@@ -35,7 +35,7 @@ namespace ce {
 
     template<class F, class Arg>
     struct ArgumentIterator<void(F), Arg>{
-        typedef as::SaveType<F, Arg> SaveType;
+        typedef as::SaveType<F, Arg, 5> SaveType;
         typedef variadic_typedef<typename SaveType::type> SavePack;
         typedef typename convert_in_tuple<SavePack>::type SaveTuple;
 
@@ -73,7 +73,7 @@ namespace ce {
 
     template<class F, class ... FArgs, class Arg, class... Args>
     struct ArgumentIterator<void(F, FArgs...), Arg, Args...>{
-        typedef as::SaveType<F, Arg> SaveType;
+        typedef as::SaveType<F, Arg, 5> SaveType;
         typedef ArgumentIterator<void(FArgs...), Args...> Parent;
         typedef typename append_to_tupple<typename SaveType::type, typename Parent::SavePack>::type SavePack;
         typedef typename convert_in_tuple<SavePack>::type SaveTuple;
