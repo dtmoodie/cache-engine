@@ -20,7 +20,7 @@ namespace ce {
     }
     template<int Idx, class Tuple, class T>
     void setOutput(size_t hash, Tuple& result, ce::HashedOutput<T>& arg) {
-        ce::get(arg) = std::get<Idx>(result);
+        ce::get(arg) = T(std::get<Idx>(result));
         arg.m_hash = hash;
     }
     template<int Idx, class Tuple, class T>

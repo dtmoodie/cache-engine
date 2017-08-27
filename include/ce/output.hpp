@@ -39,6 +39,11 @@ struct HashedOutput<T&> {
     size_t m_owned_hash = 0;
 };
 
+template<class T>
+T& get(HashedOutput<T&>&& val){
+    return val.m_ref;
+}
+
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const HashedOutput<T>& value){
     os << value.m_ref << ':' << value.m_hash;

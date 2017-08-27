@@ -282,7 +282,7 @@ namespace ce{
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
             typedef OutputPack<void(FArgs...), std::remove_reference_t<Args>...> PackType;
-            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
+            typedef PackType::SaveTuple output_tuple_type;
             size_t hash = generateHash(obj_hash, args...);
             hash = combineHash(hash, FHash);
 #ifdef CE_DEBUG_CACHE_USAGE 
