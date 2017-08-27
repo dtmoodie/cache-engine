@@ -133,8 +133,8 @@ namespace ce{
         size_t& obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
-            typedef OutputPack<R(FArgs...), HashedOutput<R>, std::remove_reference_t<Args>...> PackType;
-            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
+            typedef OutputPack<R(FArgs...), std::remove_reference_t<Args>...> PackType;
+            typedef typename PackType::SaveTuple output_tuple_type;
             size_t hash = generateHash(obj_hash, FHash, args...);
             std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
             if (result) {

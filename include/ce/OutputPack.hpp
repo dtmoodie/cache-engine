@@ -123,6 +123,27 @@ namespace ce {
     template<class FSig, class ... Args>
     struct OutputPack{};
 
+    // Specialization for function with no arguments
+    template<class R>
+    struct OutputPack<R(void)>{
+        typedef std::tuple<R> SaveTuple;
+        enum {
+            IS_OUTPUT = 0,
+            OUTPUT_COUNT = 1
+        };
+        static void debugPrint() {
+            AI::debugPrint();
+        }
+        static void setOutputs(size_t hash, std::tuple<R>& tuple, HashedOutput<R>& ret) {
+            ce::get(ret) = std::get<0>(tuple);
+            ret.m_hash = hash; 
+        }
+        template<class TupleType>
+        static void saveOutputs(size_t hash, TupleType& tuple, HashedOutput<R>& ret) {
+            std::get<0>(tuple) = ce::get(ret);
+            ret.m_hash = hash;
+        }
+    };
     template<class R, class... FArgs, class... Args>
     struct OutputPack<R(FArgs...), Args...>{
         typedef ArgumentIterator<void(FArgs...), Args...> ArgItr;

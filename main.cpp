@@ -108,7 +108,7 @@ int main(){
     value1 = 100;
     value2 = 200;
     
-    /*EXEC_MEMBER(&bar::setter)(executor,makeOutput(value2), makeOutput(value1));
+    EXEC_MEMBER(&bar::setter)(executor,makeOutput(value2), makeOutput(value1));
     assert(value1 == 10);
     assert(value2 == 5);
     
@@ -126,6 +126,6 @@ int main(){
     EXEC_MEMBER(&bar::member2)(executor, 0,1);
     EXEC_MEMBER(static_cast<void(bar::*)(int)>(&bar::overloaded))(executor, 1);
     EXEC_MEMBER(static_cast<void(bar::*)(float)>(&bar::overloaded))(executor, 1.f);
-    */
+    
     return 0;
 }

@@ -8,7 +8,7 @@
 namespace ce {
 
     template<class ... FArgs, class... Args>
-    typename std::enable_if<OutputPack<void, void(FArgs...),std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(*func)(FArgs...), Args&&...args) {
+    typename std::enable_if<OutputPack<void(FArgs...),std::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type exec(void(*func)(FArgs...), Args&&...args) {
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng) {
             typedef OutputPack<void(FArgs...), std::remove_reference_t<Args>...> PackType;

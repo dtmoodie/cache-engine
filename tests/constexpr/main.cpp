@@ -49,6 +49,11 @@ int main(int argc, char** argv){
     }
     std::cout << " ---------------------- " << std::endl;
     {
+        typedef ce::ArgumentIterator<void(int, int, int&, double&), int, int, ce::HashedOutput<int>, ce::HashedOutput<int>> AI;
+        AI::debugPrint();
+    }
+    std::cout << " ---------------------- " << std::endl;
+    {
         printSavetype<ce::HashedOutput<int>, ce::HashedOutput<int>>(setter);
     }
     return 0;

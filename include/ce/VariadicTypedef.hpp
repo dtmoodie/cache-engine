@@ -28,8 +28,15 @@ struct append_to_tupple<T, variadic_typedef<Args...> > {
     typedef variadic_typedef<T, Args...> type;
     typedef std::tuple<T, Args...> tuple_type;
 };
+
 template<typename ... Args>
-struct append_to_tupple<std::enable_if_t<!std::is_same<void, Args...>::value>, variadic_typedef<Args...> >{
+struct append_to_tupple<void, variadic_typedef<Args...> >{
+    typedef variadic_typedef<Args...> type;
+    typedef std::tuple<Args...> tuple_type;
+};
+
+template<typename ... Args>
+struct append_to_tupple<variadic_typedef<Args...>, void> {
     typedef variadic_typedef<Args...> type;
     typedef std::tuple<Args...> tuple_type;
 };
@@ -39,6 +46,19 @@ struct append_to_tupple<Arg, variadic_typedef<void>>{
     typedef variadic_typedef<Arg> type;
     typedef std::tuple<Arg> tuple_type;
 };
+
+template<>
+struct append_to_tupple<void, variadic_typedef<void>> {
+    typedef variadic_typedef<void> type;
+    typedef std::tuple<void> tuple_type;
+};
+
+template<typename Arg>
+struct append_to_tupple<variadic_typedef<void>, Arg> {
+    typedef variadic_typedef<Arg> type;
+    typedef std::tuple<Arg> tuple_type;
+};
+
 template<>
 struct append_to_tupple<void, void>{
     typedef variadic_typedef<void> type;
