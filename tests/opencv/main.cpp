@@ -36,7 +36,7 @@ public:
         alloc->free(mat);
     }
 
-    size_t getHash(const cv::cuda::GpuMat& mat){
+    size_t& getHash(const cv::cuda::GpuMat& mat){
         return hashmap[mat.refcount];
     }
 
@@ -69,6 +69,15 @@ namespace ce{
 
     inline size_t generateHash(const cv::cuda::GpuMat& data){
         return Allocator::instance()->getHash(data);
+    }
+    inline size_t getObjectHash(const cv::cuda::GpuMat& data){
+        return Allocator::instance()->getHash(data);
+    }
+    inline const cv::cuda::GpuMat& getObjectRef(const cv::cuda::GpuMat& data){
+        return data;
+    }
+    inline cv::cuda::GpuMat& getObjectRef(cv::cuda::GpuMat& data) {
+        return data;
     }
     namespace type_traits {
         namespace argument_specializations {
@@ -123,8 +132,10 @@ int main(int argc, char** argv) {
             auto mat_executor = ce::makeExecutor(output_mat);
 
             auto float_output = ce::makeOutput(float_mat);
-            mat_executor.EXEC_MEMBER(static_cast<void(cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&)const>(&cv::cuda::GpuMat::convertTo))(
-                float_output, CV_32F, 1.0, stream2);
+            /*mat_executor.EXEC_MEMBER(static_cast<void(cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&)const>(&cv::cuda::GpuMat::convertTo))(
+                float_output, CV_32F, 1.0, stream2);*/
+            ce::EXEC_MEMBER(static_cast<void(cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&)const>(&cv::cuda::GpuMat::convertTo))(
+                output_mat, float_mat, CV_32F, 1.0, stream2);
             CV_Assert(ce::generateHash(float_output) != ce::generateHash(output_mat));
 
             executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_output, corners1, ce::makeEmptyInput(cv::noArray()), stream2);
