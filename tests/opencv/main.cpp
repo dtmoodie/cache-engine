@@ -106,23 +106,30 @@ int main(int argc, char** argv) {
         auto executor = ce::makeExecutor(*kp);
         cv::cuda::GpuMat output_mat;
         cv::cuda::GpuMat float_mat;
-        cv::cuda::GpuMat corners;
+        cv::cuda::GpuMat corners1, corners2;
         auto input = cv::cuda::GpuMat(h_img);
 		if (!h_img.empty()) {
             //ce::debug::debugExecute(cv::cuda::cvtColor, input, output, cv::COLOR_BGR2GRAY, -1, stream1);
             size_t in0 = ce::generateHash(input);
             ce::exec(cv::cuda::cvtColor, input, output_mat, cv::COLOR_BGR2GRAY, -1, stream1);
             size_t in1 = ce::generateHash(input);
+            CV_Assert(in0 == in1);
             size_t out0 = ce::generateHash(output_mat);
             ce::exec(cv::cuda::cvtColor, input, output_mat, cv::COLOR_BGR2GRAY, -1, stream2);
             size_t in2 = ce::generateHash(input);
+            CV_Assert(in0 == in2);
             size_t out1 = ce::generateHash(output_mat);
+            CV_Assert(out0 == out1);
             auto mat_executor = ce::makeExecutor(output_mat);
-            mat_executor.EXEC_MEMBER(static_cast<void(cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&)const>(&cv::cuda::GpuMat::convertTo))(
-                float_mat, CV_32F, 1.0, stream2);
 
-            executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_mat, corners, ce::makeEmptyInput(cv::noArray()), stream2);
-            executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_mat, corners, ce::makeEmptyInput(cv::noArray()), stream1);
+            auto float_output = ce::makeOutput(float_mat);
+            mat_executor.EXEC_MEMBER(static_cast<void(cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&)const>(&cv::cuda::GpuMat::convertTo))(
+                float_output, CV_32F, 1.0, stream2);
+            CV_Assert(ce::generateHash(float_output) != ce::generateHash(output_mat));
+
+            executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_output, corners1, ce::makeEmptyInput(cv::noArray()), stream2);
+            executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_output, corners2, ce::makeEmptyInput(cv::noArray()), stream1);
+            CV_Assert(ce::generateHash(corners1) == ce::generateHash(corners2));
 		}
         stream1.waitForCompletion();
         stream2.waitForCompletion();
