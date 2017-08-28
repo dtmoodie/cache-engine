@@ -14,7 +14,8 @@ namespace ce {
             typedef OutputPack<void(FArgs...), std::remove_reference_t<Args>...> PackType;
             typedef typename PackType::SaveTuple output_tuple_type;
             size_t hash = generateHash(func);
-            hash = generateHash(hash, std::forward<Args>(args)...);
+            hash = ce::combineHash(hash, PackType::generateHash(args...));
+            //hash = generateHash(hash, std::forward<Args>(args)...);
 #ifdef CE_DEBUG_CACHE_USAGE 
             std::cout << "Hash: " << hash << std::endl;
 #endif

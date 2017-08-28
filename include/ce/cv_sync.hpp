@@ -47,6 +47,9 @@ namespace ce{
             struct SaveType<cv::cuda::Stream&, T, 2>{
                 enum{IS_OUTPUT = 1};
                 typedef CvEventPool::EventPtr type;
+                inline static size_t hash(const T& val) {
+                    return 0;
+                }
             };
         }
     }

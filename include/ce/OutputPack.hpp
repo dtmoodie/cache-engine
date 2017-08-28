@@ -43,6 +43,9 @@ namespace ce {
             IS_OUTPUT = SaveType::IS_OUTPUT,
             OUTPUT_COUNT =  IS_OUTPUT ? 1 : 0
         };
+        static size_t generateHash(const Arg& arg) {
+            return SaveType::hash(arg);
+        }
         static void debugPrint(){
             std::cout << "FArg: " << typeid(F).name() << " Arg: " << typeid(Arg).name() << (IS_OUTPUT ? " - OUTPUT" : " - INPUT") << std::endl;
             std::cout << "  SaveType:      " << typeid(SaveType).name() << std::endl;
@@ -81,7 +84,9 @@ namespace ce {
             IS_OUTPUT = SaveType::IS_OUTPUT,
             OUTPUT_COUNT = Parent::OUTPUT_COUNT + IS_OUTPUT ? 1 : 0
         };
-        
+        static size_t generateHash(const Arg& arg, const Args&... args) {
+            return ce::combineHash(SaveType::hash(arg), Parent::generateHash(args...));
+        }
         static void debugPrint() {
             Parent::debugPrint();
             std::cout << std::endl;
@@ -106,15 +111,19 @@ namespace ce {
         }
         template<class TupleType>
         static void setOutputs(size_t hash, TupleType& result, Arg& out, Args&... args){
-            setOutput<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(
-                combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1), result, out);
+            if(IS_OUTPUT){
+                setOutput<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(
+                    combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1), result, out);
+            }
             Parent::setOutputs(hash, result, args...);
         }
         template<class TupleType>
         static void saveOutputs(size_t hash, TupleType& result, Arg& out, Args&... args) {
-            saveOutput<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(
-                combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1),
-                result, out);
+            if(IS_OUTPUT){
+                saveOutput<std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1>(
+                    combineHash(hash, std::tuple_size<TupleType>::value - Parent::OUTPUT_COUNT - 1),
+                    result, out);
+            }
             Parent::saveOutputs(hash, result, args...);
         }
     };
@@ -131,6 +140,9 @@ namespace ce {
             IS_OUTPUT = 0,
             OUTPUT_COUNT = 1
         };
+        static size_t generateHash() {
+            return 0;
+        }
         static void debugPrint() {
             AI::debugPrint();
         }
@@ -154,6 +166,9 @@ namespace ce {
             IS_OUTPUT = 0,
             OUTPUT_COUNT = ArgItr::OUTPUT_COUNT + 1
         };
+        static size_t generateHash(const Args&... args){
+            return ArgItr::generateHash(args...);
+        }
         static void debugPrint() {
             AI::debugPrint();
         }
@@ -181,6 +196,9 @@ namespace ce {
             IS_OUTPUT = 0,
             OUTPUT_COUNT = ArgItr::OUTPUT_COUNT
         };
+        static size_t generateHash(const Args&... args) {
+            return ArgItr::generateHash(args...);
+        }
         static void debugPrint(){
             ArgItr::debugPrint();
         }
