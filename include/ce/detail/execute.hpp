@@ -27,6 +27,7 @@ namespace ce {
                     std::cout << "Found result in cache" << std::endl;
                     setCacheUsedLast(true);
 #endif
+                    tresult->getDynamicSize();
                     PackType::setOutputs(hash, tresult->values, args...);
                     return;
                 }

@@ -118,13 +118,11 @@ int main(int argc, char** argv) {
             size_t in2 = ce::generateHash(input);
             size_t out1 = ce::generateHash(output_mat);
             auto mat_executor = ce::makeExecutor(output_mat);
-
-            auto float_output = ce::makeOutput(float_mat);
             mat_executor.EXEC_MEMBER(static_cast<void(cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&)const>(&cv::cuda::GpuMat::convertTo))(
-                float_output, CV_32F, 1.0, stream2);
+                float_mat, CV_32F, 1.0, stream2);
 
-            executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_output, corners, ce::makeEmptyInput(cv::noArray()), stream2);
-            executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_output, corners, ce::makeEmptyInput(cv::noArray()), stream1);
+            executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_mat, corners, ce::makeEmptyInput(cv::noArray()), stream2);
+            executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_mat, corners, ce::makeEmptyInput(cv::noArray()), stream1);
 		}
         stream1.waitForCompletion();
         stream2.waitForCompletion();

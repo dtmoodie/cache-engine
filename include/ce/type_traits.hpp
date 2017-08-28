@@ -3,6 +3,35 @@
 namespace ce{
 namespace type_traits{
 namespace argument_specializations{
+    template<class T>
+    struct DynamicSize{
+        static inline size_t getDynamicSize(const T& obj){
+            (void)obj;
+            return sizeof(T);
+        }
+    };
+
+    template<int N> 
+    struct TupleDynamicSize{
+        template<class ...T>
+        static inline size_t getDynamicSize(const std::tuple<T...>& tup){
+            return DynamicSize<decltype(std::get<N>(tup))>::getDynamicSize(std::get<N>(tup)) + TupleDynamicSize<N-1>::getDynamicSize(tup);
+        }
+    };
+
+    template<>
+    struct TupleDynamicSize<0>{
+        template<class ...T>
+        static inline size_t getDynamicSize(const std::tuple<T...>& tup) {
+            return DynamicSize<decltype(std::get<0>(tup))>::getDynamicSize(std::get<0>(tup));
+        }
+    };
+    template<class ...Ts>
+    struct DynamicSize<std::tuple<Ts...>>{
+        static inline size_t getDynamicSize(const std::tuple<Ts...>& obj) {
+            return TupleDynamicSize<std::tuple_size<std::tuple<Ts...>>::value-1>::getDynamicSize(obj);
+        }
+    };
 
     template<class T>
     struct remove_output {
