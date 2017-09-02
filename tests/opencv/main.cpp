@@ -132,11 +132,17 @@ int main(int argc, char** argv) {
             size_t out1 = ce::generateHash(output_mat);
             CV_Assert(out0 == out1);
             auto mat_executor = ce::makeExecutor(output_mat);
+            cv::cuda::GpuMat float2_mat;
 
-            
             ce::EXEC_MEMBER(static_cast<void(cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&)const>(&cv::cuda::GpuMat::convertTo))(
                 output_mat, float_mat, CV_32F, 1.0, stream2);
             CV_Assert(ce::wasCacheUsedLast() == false);
+
+            ce::EXEC_MEMBER(static_cast<void(cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&)const>(&cv::cuda::GpuMat::convertTo))(
+                output_mat, float2_mat, CV_32F, 1.0, stream1);
+
+            CV_Assert(ce::wasCacheUsedLast() == true);
+            CV_Assert(ce::generateHash(float_mat) == ce::generateHash(float2_mat));
             CV_Assert(ce::generateHash(float_mat) != ce::generateHash(output_mat));
 
             executor.EXEC_MEMBER(&cv::cuda::CornersDetector::detect)(float_mat, corners1, ce::makeEmptyInput(cv::noArray()), stream2);
