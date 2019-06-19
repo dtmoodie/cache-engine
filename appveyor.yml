@@ -6,7 +6,11 @@ image:
 - Previous Ubuntu
 - ubuntu1804
 
-clone_depth: 1
+clone_depth: 5
+
+
+before_build:
+- git submodule update --init --recursive
 
 for:
   -
