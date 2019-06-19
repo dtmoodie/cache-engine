@@ -15,6 +15,7 @@
 #include <cmath>
 #include <math.h>
 #include <vector>
+
 void foo0()
 {
 }
@@ -274,11 +275,11 @@ BOOST_AUTO_TEST_CASE(const_ref_input)
     auto input = ce::makeInput<std::vector<int>>(100, 5);
     double val = 0.0;
     auto out1 = ce::makeOutput(val);
-    ce::exec(foo7, input, out1);
+    ce::exec(&foo7, input, out1);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), false);
     BOOST_REQUIRE_EQUAL(val, 100 * 5);
     auto out2 = ce::makeOutput(val);
-    ce::exec(foo7, input, out2);
+    ce::exec(&foo7, input, out2);
     BOOST_REQUIRE_EQUAL(ce::wasCacheUsedLast(), true);
     BOOST_REQUIRE_EQUAL(out1.m_hash, out2.m_hash);
     BOOST_REQUIRE_NE(out1.m_hash, 0);
@@ -286,7 +287,7 @@ BOOST_AUTO_TEST_CASE(const_ref_input)
 
 void foo7Wrapper(const std::vector<int>& input, double& output)
 {
-    ce::exec(foo7, ce::wrapInput(input), ce::makeOutput(output));
+    ce::exec(&foo7, ce::wrapInput(input), ce::makeOutput(output));
 }
 
 // Less efficient because a hash is calculated on the whole vector every call inside of ce::wrapInput

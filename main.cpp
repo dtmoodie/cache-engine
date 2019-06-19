@@ -111,32 +111,32 @@ int main()
     std::cout << exec(&bar::staticFunc, 0) << std::endl;
     bar cls;
     auto executor = makeExecutor(cls);
-    std::cout << EXEC_MEMBER(&bar::member)(executor, hashed) << std::endl;
-    std::cout << EXEC_MEMBER(&bar::member)(executor, hashed) << std::endl;
+    std::cout << exec(&bar::member)(executor, hashed) << std::endl;
+    std::cout << exec(&bar::member)(executor, hashed) << std::endl;
     int value1 = 20, value2 = 10;
-    EXEC_MEMBER (&bar::setter)(executor, makeOutput(value1), makeOutput(value2));
+    exec (&bar::setter)(executor, makeOutput(value1), makeOutput(value2));
     assert(value1 == 5);
     assert(value2 == 10);
     value1 = 100;
     value2 = 200;
 
-    EXEC_MEMBER (&bar::setter)(executor, makeOutput(value2), makeOutput(value1));
+    exec (&bar::setter)(executor, makeOutput(value2), makeOutput(value1));
     assert(value1 == 10);
     assert(value2 == 5);
 
-    EXEC_MEMBER (&bar::apply)(executor, 10, makeOutput(value1));
-    EXEC_MEMBER (&bar::apply)(executor, 10, makeOutput(value1));
-    EXEC_MEMBER (&bar::apply)(executor, 5, makeOutput(value1));
+    exec (&bar::apply)(executor, 10, makeOutput(value1));
+    exec (&bar::apply)(executor, 10, makeOutput(value1));
+    exec (&bar::apply)(executor, 5, makeOutput(value1));
     std::cout << "Testing setters and getters" << std::endl;
-    int ret = EXEC_MEMBER(&bar::get)(executor);
+    int ret = exec(&bar::get)(executor);
     std::cout << ret << std::endl;
     // executor.set(&bar::set, 15);
-    std::cout << EXEC_MEMBER(&bar::get)(executor) << std::endl;
-    std::cout << EXEC_MEMBER(&bar::get)(executor) << std::endl;
+    std::cout << exec(&bar::get)(executor) << std::endl;
+    std::cout << exec(&bar::get)(executor) << std::endl;
 
-    EXEC_MEMBER (&bar::member2)(executor, 0, 1);
-    EXEC_MEMBER(static_cast<void (bar::*)(int)>(&bar::overloaded))(executor, 1);
-    EXEC_MEMBER(static_cast<void (bar::*)(float)>(&bar::overloaded))(executor, 1.f);
+    exec (&bar::member2)(executor, 0, 1);
+    exec(static_cast<void (bar::*)(int)>(&bar::overloaded))(executor, 1);
+    exec(static_cast<void (bar::*)(float)>(&bar::overloaded))(executor, 1.f);
 
     return 0;
 }

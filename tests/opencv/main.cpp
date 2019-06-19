@@ -46,17 +46,36 @@ int main(int argc, char** argv)
             auto mat_executor = ce::makeExecutor(output);
 
             auto float_output = ce::makeOutput(float_mat);
-            mat_executor.EXEC_MEMBER(
+            mat_executor.exec(
                 static_cast<void (cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&) const>(
                     &cv::cuda::GpuMat::convertTo))(float_output, CV_32F, 1.0, stream2);
 
-            executor.EXEC_MEMBER (&cv::cuda::CornersDetector::detect)(
+            executor.exec (&cv::cuda::CornersDetector::detect)(
                 ce::makeInput(float_output), ce::makeOutput(corners), ce::makeEmptyInput(cv::noArray()), stream2);
-            executor.EXEC_MEMBER (&cv::cuda::CornersDetector::detect)(
+
+            executor.exec (&cv::cuda::CornersDetector::detect)(
                 ce::makeInput(float_output), ce::makeOutput(corners), ce::makeEmptyInput(cv::noArray()), stream1);
+            if (ce::wasCacheUsedLast())
+            {
+                std::cout << "Successfully pulled corner detection results out of cache" << std::endl;
+            }
+            else
+            {
+                std::cout << "Unable to pull corner detections out of result cache" << std::endl;
+                return 1;
+            }
+        }
+        else
+        {
+            std::cout << "Unable to load " << argv[1] << std::endl;
         }
         stream1.waitForCompletion();
         stream2.waitForCompletion();
+    }
+    else
+    {
+        std::cout << "Did not pass in an image as the arg to this application" << std::endl;
+        return 1;
     }
 
     ce::ICacheEngine::releaseEngine();

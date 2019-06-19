@@ -86,9 +86,8 @@ namespace ce
     }
 
     template <class T>
-    size_t combineHash(size_t seed, const HashedOutput<T>& v)
+    size_t combineHash(size_t seed, HashedOutput<T>&)
     {
-        (void)v;
         return seed;
     }
 

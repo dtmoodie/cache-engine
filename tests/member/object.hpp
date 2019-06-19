@@ -59,7 +59,7 @@ struct TestOutputObject
 
 struct TestHashedOutputObject : public TestOutputObject
 {
-    size_t hash;
+    size_t hash = 0;
 };
 
 struct MutateOutputObject
