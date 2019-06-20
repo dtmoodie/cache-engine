@@ -8,10 +8,6 @@ image:
 
 clone_depth: 5
 
-
-before_build:
-- git submodule update --init --recursive
-
 for:
   -
     matrix:
@@ -22,6 +18,7 @@ for:
       CXX: /usr/bin/g++-8
 
 before_build:
+- git submodule update --init --recursive
 
 - cmd: >-
    if not exist "build" mkdir build
