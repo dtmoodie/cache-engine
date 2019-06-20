@@ -161,8 +161,3 @@ BOOST_AUTO_TEST_CASE(mutate_hashed_object)
     BOOST_REQUIRE_EQUAL(out1.data, out2.data);
     BOOST_REQUIRE_EQUAL(ce::getObjectHash(obj1), ce::getObjectHash(obj2));
 }
-
-BOOST_AUTO_TEST_CASE(cleanup)
-{
-    ce::ICacheEngine::releaseEngine();
-}

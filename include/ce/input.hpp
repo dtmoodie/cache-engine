@@ -93,14 +93,19 @@ namespace ce
     }
 
     template <class T>
-    size_t combineHash(size_t seed, const HashedInput<T>& v)
+    size_t generateHash(const HashedInput<T>& v)
     {
-        seed ^= v.hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        return seed;
+        return v.hash;
     }
 
     template <class T>
-    size_t generateHash(const HashedInput<T>& v)
+    size_t generateHash(HashedInput<T>& v)
+    {
+        return v.hash;
+    }
+
+    template <class T>
+    size_t generateHash(HashedInput<T>&& v)
     {
         return v.hash;
     }
@@ -157,13 +162,19 @@ namespace ce
     }
 
     template <class T>
-    size_t combineHash(size_t seed, const EmptyInput<T>&)
+    size_t generateHash(const EmptyInput<T>&)
     {
-        return seed;
+        return 0;
     }
 
     template <class T>
-    size_t generateHash(const EmptyInput<T>&)
+    size_t generateHash(EmptyInput<T>&&)
+    {
+        return 0;
+    }
+
+    template <class T>
+    size_t generateHash(EmptyInput<T>&)
     {
         return 0;
     }

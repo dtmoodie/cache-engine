@@ -2,59 +2,28 @@
 
 namespace ce
 {
-    extern thread_local std::unique_ptr<ICacheEngine> t_engine;
-    extern thread_local bool t_cache_used_last;
-
-    static std::unique_ptr<ICacheEngine> g_engine;
-    thread_local std::unique_ptr<ICacheEngine> t_engine;
-    thread_local bool t_cache_used_last = false;
-
-    bool wasCacheUsedLast()
+    namespace
     {
-        return t_cache_used_last;
+        static std::shared_ptr<ICacheEngine> g_engine;
     }
 
-    void setCacheUsedLast(bool value)
+    std::shared_ptr<ICacheEngine> ICacheEngine::instance()
     {
-        t_cache_used_last = value;
+        if (g_engine == nullptr)
+        {
+            g_engine = create();
+        }
+        return g_engine;
     }
 
-    ICacheEngine* ICacheEngine::instance()
+    std::shared_ptr<ICacheEngine> ICacheEngine::create()
     {
-        if (t_engine)
-        {
-            return t_engine.get();
-        }
-        return g_engine.get();
+        return std::make_shared<CacheEngine>();
     }
 
-    std::unique_ptr<ICacheEngine> ICacheEngine::create()
+    void ICacheEngine::setEngine(std::shared_ptr<ICacheEngine> engine)
     {
-        return std::unique_ptr<ICacheEngine>(new CacheEngine());
-    }
-
-    void ICacheEngine::setEngine(std::unique_ptr<ICacheEngine>&& engine, bool is_thread_local)
-    {
-        if (is_thread_local)
-        {
-            t_engine = std::move(engine);
-        }
-        else
-        {
-            g_engine = std::move(engine);
-        }
-    }
-
-    void ICacheEngine::releaseEngine(bool thread_engine)
-    {
-        if (thread_engine)
-        {
-            t_engine.reset();
-        }
-        else
-        {
-            g_engine.reset();
-        }
+        g_engine = std::move(engine);
     }
 
     ICacheEngine::~ICacheEngine()
@@ -86,8 +55,8 @@ namespace ce
         m_was_used = val;
     }
 
-    std::shared_ptr<IResult>& CacheEngine::getCachedResult(size_t hash)
+    std::shared_ptr<IResult>& CacheEngine::getCachedResult(size_t fhash, size_t hash)
     {
-        return m_result_cache[hash];
+        return m_result_cache[combineHash(fhash, hash)];
     }
 }

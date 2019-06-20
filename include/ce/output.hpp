@@ -1,5 +1,7 @@
 #pragma once
 #include <ce/export.hpp>
+#include <ce/hash.hpp>
+
 #include <iostream>
 
 namespace ce
@@ -10,13 +12,8 @@ namespace ce
         HashedOutput()
         {
         }
-        HashedOutput(const T& val, size_t hash = 0)
-            : m_ref(val)
-            , m_hash(hash)
-        {
-        }
 
-        HashedOutput(T&& val, size_t hash = 0)
+        HashedOutput(T val, size_t hash = 0)
             : m_ref(std::move(val))
             , m_hash(hash)
         {
@@ -86,12 +83,6 @@ namespace ce
     }
 
     template <class T>
-    size_t combineHash(size_t seed, HashedOutput<T>&)
-    {
-        return seed;
-    }
-
-    template <class T>
     T& get(HashedOutput<T>&& data)
     {
         return data.m_ref;
@@ -104,7 +95,28 @@ namespace ce
     }
 
     template <class T>
+    struct HashSelector<HashedOutput<T>, void, 9>
+    {
+        static size_t generateHash(const HashedOutput<T>& data)
+        {
+            return data.m_hash;
+        }
+    };
+
+    template <class T>
     size_t generateHash(const HashedOutput<T>& v)
+    {
+        return v.m_hash;
+    }
+
+    template <class T>
+    size_t generateHash(HashedOutput<T>& v)
+    {
+        return v.m_hash;
+    }
+
+    template <class T>
+    size_t generateHash(HashedOutput<T>&& v)
     {
         return v.m_hash;
     }

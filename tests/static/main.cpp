@@ -301,8 +301,3 @@ BOOST_AUTO_TEST_CASE(wrapper_function)
     foo7Wrapper(in, out);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
-
-BOOST_AUTO_TEST_CASE(cleanup)
-{
-    ce::ICacheEngine::releaseEngine();
-}

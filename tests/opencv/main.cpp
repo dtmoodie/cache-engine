@@ -90,6 +90,5 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    ce::ICacheEngine::releaseEngine();
     return 0;
 }

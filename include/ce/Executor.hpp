@@ -1,10 +1,10 @@
 #pragma once
-#include <ce/CacheEngine.hpp>
+#include <ce/output.hpp>
+
+#include <ce/ICacheEngine.hpp>
 #include <ce/OutputPack.hpp>
 #include <ce/TResult.hpp>
-#include <ce/hash.hpp>
 #include <ce/input.hpp>
-#include <ce/output.hpp>
 
 #include <cstring>
 #include <ct/StringView.hpp>
@@ -205,13 +205,14 @@ namespace ce
     {
         T& obj = getObjectRef(object);
         size_t& obj_hash = getObjectHash(object);
-        ICacheEngine* eng = ICacheEngine::instance();
+        auto eng = ICacheEngine::instance();
         if (eng)
         {
             using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<Args>...>;
             using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
-            size_t hash = generateHash(obj_hash, m_fhash, args...);
-            std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
+            const auto arg_hash = generateHash(obj_hash, std::forward<Args>(args)...);
+            const size_t combined_hash = generateHash(m_fhash, arg_hash);
+            std::shared_ptr<IResult>& result = eng->getCachedResult(m_fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<output_tuple_type>> tresult =
@@ -222,19 +223,17 @@ namespace ce
 #ifdef CE_DEBUG_CACHE_USAGE
                     std::cout << "Found result in cache" << std::endl;
 #endif
-                    PackType::setOutputs(hash, tresult->values, ret, args...);
+                    PackType::setOutputs(combined_hash, tresult->values, ret, args...);
                     return ret;
                 }
             }
-            R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
-            HashedOutput<R> out(std::move(ret), hash);
-            PackType::saveOutputs(hash, results, out, args...);
+            HashedOutput<R> out((obj.*m_func)(ce::get(std::forward<Args>(args))...), combined_hash);
+            PackType::saveOutputs(combined_hash, results, out, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
             return out;
         }
-        R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
-        HashedOutput<R> out(std::move(ret));
+        HashedOutput<R> out((obj.*m_func)(ce::get(std::forward<Args>(args))...));
         return out;
     }
 
@@ -269,23 +268,24 @@ namespace ce
     typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
     ExecutionToken<T, void, FArgs...>::operator()(T2& object, Args&&... args)
     {
+        using PackType = OutputPack<void, ct::remove_reference_t<Args>...>;
+        using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
+
         T& obj = getObjectRef(object);
         size_t& obj_hash = getObjectHash(object);
-        ICacheEngine* eng = ICacheEngine::instance();
+        auto eng = ICacheEngine::instance();
         if (eng)
         {
-            typedef OutputPack<void, ct::remove_reference_t<Args>...> PackType;
-            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
-            size_t hash = generateHash(obj_hash, args...);
-            hash = combineHash(hash, m_fhash);
+            const size_t arg_hash = generateHash(obj_hash, args...);
+            const auto combined_hash = combineHash(m_fhash, arg_hash);
             if (eng->printDebug())
             {
                 std::cout << "arghash: (";
                 printArgHash(std::forward<Args>(args)...);
                 std::cout << ") ";
-                std::cout << "fhash: " << m_fhash << " Hash: " << hash << std::endl;
+                std::cout << "fhash: " << m_fhash << " Hash: " << arg_hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
+            std::shared_ptr<IResult>& result = eng->getCachedResult(m_fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<output_tuple_type>> tresult =
@@ -297,14 +297,14 @@ namespace ce
                         std::cout << "Found result in cache" << std::endl;
                     }
                     eng->setCacheWasUsed(true);
-                    PackType::setOutputs(hash, tresult->values, args...);
+                    PackType::setOutputs(combined_hash, tresult->values, args...);
                     return;
                 }
             }
             eng->setCacheWasUsed(false);
             (obj.*m_func)(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
-            PackType::saveOutputs(hash, results, args...);
+            PackType::saveOutputs(combined_hash, results, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
         }
         else
@@ -320,9 +320,9 @@ namespace ce
     {
         T& obj = getObjectRef(object);
         size_t& obj_hash = getObjectHash(object);
-        size_t hash = generateHash(obj_hash, args...);
-        hash = combineHash(hash, m_fhash);
-        obj_hash = hash;
+        size_t arg_hash = generateHash(obj_hash, args...);
+        const auto combined_hash = combineHash(m_fhash, arg_hash);
+        obj_hash = combined_hash;
         (obj.*m_func)(ce::get(std::forward<Args>(args))...);
     }
 
@@ -340,7 +340,7 @@ namespace ce
     HashedOutput<R> ConstExecutionToken<T, R, FArgs...>::operator()(const T2& object, Args&&... args)
     {
         const T& obj = getObjectRef(object);
-        ICacheEngine* eng = ICacheEngine::instance();
+        auto eng = ICacheEngine::instance();
         if (eng)
         {
             return eng->exec(m_func, object, std::forward<Args>(args)...);
@@ -363,7 +363,7 @@ namespace ce
     ConstExecutionToken<T, void, FArgs...>::operator()(const T2& object, Args&&... args)
     {
         const T& obj = getObjectRef(object);
-        ICacheEngine* eng = ICacheEngine::instance();
+        auto eng = ICacheEngine::instance();
         if (eng)
         {
             eng->exec(m_func, object, std::forward<Args>(args)...);

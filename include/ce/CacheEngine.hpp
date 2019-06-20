@@ -9,8 +9,8 @@ namespace ce
     struct CE_EXPORT CacheEngine : public ICacheEngine
     {
         CacheEngine(bool debug_print = false);
-        virtual ~CacheEngine() override;
-        virtual std::shared_ptr<IResult>& getCachedResult(size_t hash) override;
+        ~CacheEngine() override;
+        std::shared_ptr<IResult>& getCachedResult(size_t fhash, size_t hash) override;
 
         bool printDebug() const override;
         bool wasCacheUsedLast() const override;

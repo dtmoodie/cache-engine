@@ -109,13 +109,12 @@ namespace ce
     {
         virtual ~ICacheEngine();
         // Static singleton stuffs
-        static ICacheEngine* instance();
-        static std::unique_ptr<ICacheEngine> create();
-        static void setEngine(std::unique_ptr<ICacheEngine>&& engine, bool is_thread_local = false);
-        static void releaseEngine(bool thread_engine = false);
+        static std::shared_ptr<ICacheEngine> instance();
+        static std::shared_ptr<ICacheEngine> create();
+        static void setEngine(std::shared_ptr<ICacheEngine> engine);
 
         // These are the interface functions that must be satisfied by the implementation
-        virtual std::shared_ptr<IResult>& getCachedResult(size_t hash) = 0;
+        virtual std::shared_ptr<IResult>& getCachedResult(size_t fhash, size_t hash) = 0;
         virtual bool printDebug() const = 0;
         virtual bool wasCacheUsedLast() const = 0;
         virtual void setCacheWasUsed(bool) = 0;
@@ -131,13 +130,14 @@ namespace ce
         {
             using PackType = OutputPack<void, ct::remove_reference_t<Args>...>;
             using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
-            size_t hash = generateHash(func);
-            hash = generateHash(hash, std::forward<Args>(args)...);
+            const auto fhash = generateHash(func);
+            const size_t hash = generateHash(std::forward<Args>(args)...);
+            const auto combined_hash = combineHash(fhash, hash);
             if (printDebug())
             {
                 std::cout << "Hash: " << hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = this->getCachedResult(hash);
+            std::shared_ptr<IResult>& result = getCachedResult(fhash, hash);
             if (result)
             {
                 std::shared_ptr<TResult<output_tuple_type>> tresult =
@@ -149,14 +149,14 @@ namespace ce
                         std::cout << "Found result in cache" << std::endl;
                     }
                     setCacheWasUsed(true);
-                    PackType::setOutputs(hash, tresult->values, args...);
+                    PackType::setOutputs(combined_hash, tresult->values, args...);
                     return;
                 }
             }
             setCacheWasUsed(false);
             func(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
-            PackType::saveOutputs(hash, results, args...);
+            PackType::saveOutputs(combined_hash, results, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
         }
 
@@ -166,13 +166,14 @@ namespace ce
         {
             using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<Args>...>;
             using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
-            size_t hash = generateHash(func);
-            hash = generateHash(hash, std::forward<Args>(args)...);
+            const size_t fhash = generateHash(func);
+            const size_t hash = generateHash(std::forward<Args>(args)...);
+            const size_t combined_hash = combineHash(fhash, hash);
             if (printDebug())
             {
                 std::cout << "Hash: " << hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = getCachedResult(hash);
+            std::shared_ptr<IResult>& result = getCachedResult(fhash, hash);
             if (result)
             {
                 std::shared_ptr<TResult<output_tuple_type>> tresult =
@@ -185,7 +186,7 @@ namespace ce
                     }
                     setCacheWasUsed(true);
                     HashedOutput<R> ret;
-                    PackType::setOutputs(hash, tresult->values, ret, args...);
+                    PackType::setOutputs(combined_hash, tresult->values, ret, args...);
                     return ret;
                 }
             }
@@ -193,7 +194,7 @@ namespace ce
             R ret = func(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
             HashedOutput<R> out(std::move(ret), hash);
-            PackType::saveOutputs(hash, results, out, args...);
+            PackType::saveOutputs(combined_hash, results, out, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
             return out;
         }
@@ -211,8 +212,9 @@ namespace ce
             const auto& obj_ref = getObjectRef(obj);
             auto obj_hash = getObjectHash(obj);
             const auto fhash = memberFunctionPointerValue(func);
-            size_t hash = generateHash(obj_hash, fhash, args...);
-            std::shared_ptr<IResult>& result = getCachedResult(hash);
+            const auto arg_hash = generateHash(obj_hash, args...);
+            const auto combined_hash = combineHash(fhash, arg_hash);
+            std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<output_tuple_type>> tresult =
@@ -225,15 +227,14 @@ namespace ce
                         std::cout << "Found result in cache" << std::endl;
                     }
                     setCacheWasUsed(true);
-                    PackType::setOutputs(hash, tresult->values, ret, args...);
+                    PackType::setOutputs(combined_hash, tresult->values, ret, args...);
                     return ret;
                 }
             }
             setCacheWasUsed(false);
-            R ret = (obj_ref.*func)(ce::get(std::forward<ARGS>(args))...);
             output_tuple_type results;
-            HashedOutput<R> out(std::move(ret), hash);
-            PackType::saveOutputs(hash, results, out, args...);
+            HashedOutput<R> out((obj_ref.*func)(ce::get(std::forward<ARGS>(args))...), combined_hash);
+            PackType::saveOutputs(combined_hash, results, out, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
             return out;
         }
@@ -254,13 +255,13 @@ namespace ce
             size_t obj_hash = getObjectHash(object);
             const auto fhash = memberFunctionPointerValue(func);
 
-            size_t hash = generateHash(obj_hash, args...);
-            hash = combineHash(hash, fhash);
+            size_t arg_hash = generateHash(obj_hash, args...);
+            const auto combined_hash = combineHash(fhash, arg_hash);
             if (printDebug())
             {
-                std::cout << "Hash: " << hash << std::endl;
+                std::cout << "Hash: " << arg_hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = getCachedResult(hash);
+            std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<output_tuple_type>> tresult =
@@ -272,14 +273,14 @@ namespace ce
                         std::cout << "Found result in cache" << std::endl;
                     }
                     setCacheWasUsed(true);
-                    PackType::setOutputs(hash, tresult->values, args...);
+                    PackType::setOutputs(combined_hash, tresult->values, args...);
                     return;
                 }
             }
             setCacheWasUsed(false);
             (obj.*func)(ce::get(std::forward<ARGS>(args))...);
             output_tuple_type results;
-            PackType::saveOutputs(hash, results, args...);
+            PackType::saveOutputs(combined_hash, results, args...);
             result.reset(new TResult<output_tuple_type>(std::move(results)));
         }
     };
