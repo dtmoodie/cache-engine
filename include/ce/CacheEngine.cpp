@@ -2,6 +2,9 @@
 
 namespace ce
 {
+    extern thread_local std::unique_ptr<ICacheEngine> t_engine;
+    extern thread_local bool t_cache_used_last;
+
     static std::unique_ptr<ICacheEngine> g_engine;
     thread_local std::unique_ptr<ICacheEngine> t_engine;
     thread_local bool t_cache_used_last = false;
@@ -52,8 +55,24 @@ namespace ce
         m_result_cache.clear();
     }
 
-    CacheEngine::CacheEngine()
+    CacheEngine::CacheEngine(bool debug)
+        : m_print_debug(debug)
     {
+    }
+
+    bool CacheEngine::printDebug() const
+    {
+        return m_print_debug;
+    }
+
+    bool CacheEngine::wasCacheUsedLast() const
+    {
+        return m_was_used;
+    }
+
+    void CacheEngine::setCacheWasUsed(bool val)
+    {
+        m_was_used = val;
     }
 
     std::shared_ptr<IResult>& CacheEngine::getCachedResult(size_t hash)

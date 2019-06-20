@@ -38,9 +38,9 @@ BOOST_AUTO_TEST_CASE(member_access_with_executor_owner)
     BOOST_REQUIRE_EQUAL(executor1.m_hash, executor2.m_hash);
     auto old_hash = executor1.m_hash;
     auto ret1 = executor1.exec(&TestObject::get)();
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
     auto ret2 = executor2.exec(&TestObject::get)();
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == true);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == true);
     BOOST_REQUIRE_EQUAL(ret1, ret2);
     BOOST_REQUIRE_EQUAL(executor1.m_hash, executor2.m_hash);
     BOOST_REQUIRE_EQUAL(executor1.m_hash, old_hash);
@@ -59,9 +59,9 @@ BOOST_AUTO_TEST_CASE(member_access_with_executor_wrapper)
     BOOST_REQUIRE_NE(executor1.m_hash, executor2.m_hash);
     auto old_hash = executor1.m_hash;
     auto ret1 = executor1.exec(&TestObject::get)();
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
     auto ret2 = executor2.exec(&TestObject::get)();
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
     BOOST_REQUIRE_EQUAL(ret1, ret2);
     BOOST_REQUIRE_EQUAL(executor1.m_hash, old_hash);
 }
@@ -73,17 +73,17 @@ BOOST_AUTO_TEST_CASE(member_set_with_executor_owner)
     BOOST_REQUIRE_EQUAL(executor1.m_hash, executor2.m_hash);
     auto old_hash = executor1.m_hash;
     executor1.exec (&TestObject::set)(4);
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
     executor2.exec (&TestObject::set)(4);
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
     BOOST_REQUIRE_EQUAL(executor1.m_hash, executor2.m_hash);
     BOOST_REQUIRE_NE(executor1.m_hash, old_hash);
 
     old_hash = executor1.m_hash;
     auto ret1 = executor1.exec(&TestObject::get)();
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
     auto ret2 = executor2.exec(&TestObject::get)();
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == true);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == true);
     BOOST_REQUIRE_EQUAL(old_hash, executor1.m_hash);
     BOOST_REQUIRE_EQUAL(ret1, 4);
     BOOST_REQUIRE_EQUAL(ret1, ret2);
@@ -97,11 +97,11 @@ BOOST_AUTO_TEST_CASE(member_apply_return_with_owner)
     auto old_hash = executor1.m_hash;
 
     auto ret1 = executor1.exec(static_cast<int (TestObject::*)(int, int) const>(&TestObject::apply))(4, 5);
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
     // Intentially have different whitespace between the two function calls to verify a whitespace ignoreant hash is
     // used
     auto ret2 = executor2.exec(static_cast<int (TestObject::*)(int, int) const>(&TestObject::apply))(4, 5);
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == true);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == true);
 
     BOOST_REQUIRE_EQUAL(ret1, ret2);
     BOOST_REQUIRE_EQUAL(old_hash, executor1.m_hash);
@@ -118,11 +118,11 @@ BOOST_AUTO_TEST_CASE(member_apply_with_owner)
     auto out1 = ce::makeOutput(val1);
     auto out2 = ce::makeOutput(val2);
     executor1.exec(static_cast<void (TestObject::*)(int, int&) const>(&TestObject::apply))(4, out1);
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
     // Intentially have different whitespace between the two function calls to verify a whitespace ignoreant hash is
     // used
     executor2.exec(static_cast<void (TestObject::*)(int, int&) const>(&TestObject::apply))(4, out2);
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == true);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == true);
 
     BOOST_REQUIRE_EQUAL(val1, val2);
     BOOST_REQUIRE_EQUAL(old_hash, executor1.m_hash);
@@ -134,10 +134,10 @@ BOOST_AUTO_TEST_CASE(member_apply_with_owner)
     BOOST_REQUIRE_EQUAL(executor1.m_hash, executor2.m_hash);
 
     executor1.exec(static_cast<void (TestObject::*)(int, int&) const>(&TestObject::apply))(4, out1);
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
 
     executor2.exec(static_cast<void (TestObject::*)(int, int&) const>(&TestObject::apply))(4, out2);
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == true);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == true);
 
     BOOST_REQUIRE_EQUAL(val1, val2);
     BOOST_REQUIRE_NE(old_out_hash, out1.m_hash);
@@ -153,10 +153,10 @@ BOOST_AUTO_TEST_CASE(mutate_hashed_object)
     TestHashedOutputObject out2;
     BOOST_REQUIRE_EQUAL(ce::getObjectHash(obj1), ce::getObjectHash(obj2));
     ce::exec (&MutateOutputObject::mutate)(obj1, ce::makeOutput(out1));
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == false);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == false);
     BOOST_REQUIRE_EQUAL(ce::getObjectHash(obj1), ce::getObjectHash(obj2));
     ce::exec (&MutateOutputObject::mutate)(obj2, ce::makeOutput(out2));
-    BOOST_REQUIRE(ce::wasCacheUsedLast() == true);
+    BOOST_REQUIRE(ce::ICacheEngine::instance()->wasCacheUsedLast() == true);
     BOOST_REQUIRE_EQUAL(out1.hash, out2.hash);
     BOOST_REQUIRE_EQUAL(out1.data, out2.data);
     BOOST_REQUIRE_EQUAL(ce::getObjectHash(obj1), ce::getObjectHash(obj2));

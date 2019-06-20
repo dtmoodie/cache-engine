@@ -6,9 +6,9 @@
 #include <ce/input.hpp>
 #include <ce/output.hpp>
 
+#include <cstring>
 #include <ct/StringView.hpp>
 #include <ct/types/TArrayView.hpp>
-#include <cstring>
 #include <iostream>
 #include <type_traits>
 
@@ -344,8 +344,8 @@ namespace ce
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng)
         {
-            typedef OutputPack<void, HashedOutput<R>, ct::remove_reference_t<Args>...> PackType;
-            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
+            using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<Args>...>;
+            using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
             size_t hash = generateHash(obj_hash, m_fhash, args...);
             std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
             if (result)
@@ -357,15 +357,11 @@ namespace ce
                     HashedOutput<R> ret;
 #ifdef CE_DEBUG_CACHE_USAGE
                     std::cout << "Found result in cache" << std::endl;
-                    setCacheUsedLast(true);
 #endif
                     PackType::setOutputs(hash, tresult->values, ret, args...);
                     return ret;
                 }
             }
-#ifdef CE_DEBUG_CACHE_USAGE
-            setCacheUsedLast(false);
-#endif
             R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
             HashedOutput<R> out(std::move(ret), hash);
@@ -385,25 +381,23 @@ namespace ce
     {
     }
 
-
-    template<class T>
+    template <class T>
     void printArgHashImpl(T&& arg)
     {
         std::cout << generateHash(arg) << " ";
     }
 
-    template<class T, class ... ARGS>
-    void printArgHashImpl(T&& arg, ARGS&& ... args)
+    template <class T, class... ARGS>
+    void printArgHashImpl(T&& arg, ARGS&&... args)
     {
         std::cout << generateHash(arg) << " ";
         printArgHashImpl(std::forward<ARGS>(args)...);
     }
 
-    template<class ... ARGS>
+    template <class... ARGS>
     void printArgHash(ARGS&&... args)
     {
         printArgHashImpl(std::forward<ARGS>(args)...);
-        std::cout << std::endl;
     }
 
     template <class T, class... FArgs>
@@ -420,11 +414,13 @@ namespace ce
             typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
             size_t hash = generateHash(obj_hash, args...);
             hash = combineHash(hash, m_fhash);
-#ifdef CE_DEBUG_CACHE_USAGE
-            std::cout << "arghash: ";
-            printArgHash(std::forward<Args>(args)...);
-            std::cout << "fhash: " << m_fhash << " Hash: " << hash << std::endl;
-#endif
+            if (eng->printDebug())
+            {
+                std::cout << "arghash: (";
+                printArgHash(std::forward<Args>(args)...);
+                std::cout << ") ";
+                std::cout << "fhash: " << m_fhash << " Hash: " << hash << std::endl;
+            }
             std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
             if (result)
             {
@@ -432,17 +428,16 @@ namespace ce
                     std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
                 if (tresult)
                 {
-#ifdef CE_DEBUG_CACHE_USAGE
-                    std::cout << "Found result in cache" << std::endl;
-                    setCacheUsedLast(true);
-#endif
+                    if (eng->printDebug())
+                    {
+                        std::cout << "Found result in cache" << std::endl;
+                    }
+                    eng->setCacheWasUsed(true);
                     PackType::setOutputs(hash, tresult->values, args...);
                     return;
                 }
             }
-#ifdef CE_DEBUG_CACHE_USAGE
-            setCacheUsedLast(false);
-#endif
+            eng->setCacheWasUsed(false);
             (obj.*m_func)(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
             PackType::saveOutputs(hash, results, args...);
@@ -496,17 +491,16 @@ namespace ce
                 if (tresult)
                 {
                     HashedOutput<R> ret;
-#ifdef CE_DEBUG_CACHE_USAGE
-                    std::cout << "Found result in cache" << std::endl;
-                    setCacheUsedLast(true);
-#endif
+                    if (eng->printDebug())
+                    {
+                        std::cout << "Found result in cache" << std::endl;
+                    }
+                    eng->setCacheWasUsed(true);
                     PackType::setOutputs(hash, tresult->values, ret, args...);
                     return ret;
                 }
             }
-#ifdef CE_DEBUG_CACHE_USAGE
-            setCacheUsedLast(false);
-#endif
+            eng->setCacheWasUsed(false);
             R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
             HashedOutput<R> out(std::move(ret), hash);
@@ -514,9 +508,6 @@ namespace ce
             result.reset(new TResult<output_tuple_type>(std::move(results)));
             return out;
         }
-#ifdef CE_DEBUG_CACHE_USAGE
-        setCacheUsedLast(false);
-#endif
         R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
         HashedOutput<R> out(std::move(ret));
         return out;
@@ -539,13 +530,14 @@ namespace ce
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng)
         {
-            typedef OutputPack<void, ct::remove_reference_t<Args>...> PackType;
-            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
+            using PackType = OutputPack<void, ct::remove_reference_t<Args>...>;
+            using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
             size_t hash = generateHash(obj_hash, args...);
             hash = combineHash(hash, m_fhash);
-#ifdef CE_DEBUG_CACHE_USAGE
-            std::cout << "Hash: " << hash << std::endl;
-#endif
+            if (eng->printDebug())
+            {
+                std::cout << "Hash: " << hash << std::endl;
+            }
             std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
             if (result)
             {
@@ -553,17 +545,16 @@ namespace ce
                     std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
                 if (tresult)
                 {
-#ifdef CE_DEBUG_CACHE_USAGE
-                    std::cout << "Found result in cache" << std::endl;
-                    setCacheUsedLast(true);
-#endif
+                    if (eng->printDebug())
+                    {
+                        std::cout << "Found result in cache" << std::endl;
+                    }
+                    eng->setCacheWasUsed(true);
                     PackType::setOutputs(hash, tresult->values, args...);
                     return;
                 }
             }
-#ifdef CE_DEBUG_CACHE_USAGE
-            setCacheUsedLast(false);
-#endif
+            eng->setCacheWasUsed(false);
             (obj.*m_func)(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
             PackType::saveOutputs(hash, results, args...);
@@ -571,9 +562,6 @@ namespace ce
         }
         else
         {
-#ifdef CE_DEBUG_CACHE_USAGE
-            setCacheUsedLast(false);
-#endif
             (obj.*m_func)(ce::get(std::forward<Args>(args))...);
         }
     }

@@ -12,11 +12,6 @@
 #include <memory>
 namespace ce
 {
-    // was the last call to a ce::exec or ce::Executor::exec a cashed executation or a non cached executation, only used
-    // if CE_DEBUG_CACHE_USAGE is defined
-    bool CE_EXPORT wasCacheUsedLast();
-    void CE_EXPORT setCacheUsedLast(bool value);
-
     struct CE_EXPORT ICacheEngine
     {
         virtual ~ICacheEngine();
@@ -26,7 +21,13 @@ namespace ce
         static void releaseEngine(bool thread_engine = false);
 
         virtual std::shared_ptr<IResult>& getCachedResult(size_t hash) = 0;
+        virtual bool printDebug() const = 0;
+        virtual bool wasCacheUsedLast() const = 0;
+        virtual void setCacheWasUsed(bool) = 0;
 
+        /////////////////////////////////////////////////////////////////////////////
+        // Static functions
+        /////////////////////////////////////////////////////////////////////////////
         // Function doesn't return
         template <class... FArgs, class... Args>
         typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
@@ -36,9 +37,10 @@ namespace ce
             typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
             size_t hash = generateHash(func);
             hash = generateHash(hash, std::forward<Args>(args)...);
-#ifdef CE_DEBUG_CACHE_USAGE
-            std::cout << "Hash: " << hash << std::endl;
-#endif
+            if (printDebug())
+            {
+                std::cout << "Hash: " << hash << std::endl;
+            }
             std::shared_ptr<IResult>& result = this->getCachedResult(hash);
             if (result)
             {
@@ -46,17 +48,16 @@ namespace ce
                     std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
                 if (tresult)
                 {
-#ifdef CE_DEBUG_CACHE_USAGE
-                    std::cout << "Found result in cache" << std::endl;
-                    setCacheUsedLast(true);
-#endif
+                    if (printDebug())
+                    {
+                        std::cout << "Found result in cache" << std::endl;
+                    }
+                    setCacheWasUsed(true);
                     PackType::setOutputs(hash, tresult->values, args...);
                     return;
                 }
             }
-#ifdef CE_DEBUG_CACHE_USAGE
-            setCacheUsedLast(false);
-#endif
+            setCacheWasUsed(false);
             func(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
             PackType::saveOutputs(hash, results, args...);
@@ -71,9 +72,10 @@ namespace ce
             typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
             size_t hash = generateHash(func);
             hash = generateHash(hash, std::forward<Args>(args)...);
-#ifdef CE_DEBUG_CACHE_USAGE
-            std::cout << "Hash: " << hash << std::endl;
-#endif
+            if (printDebug())
+            {
+                std::cout << "Hash: " << hash << std::endl;
+            }
             std::shared_ptr<IResult>& result = this->getCachedResult(hash);
             if (result)
             {
@@ -81,18 +83,17 @@ namespace ce
                     std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
                 if (tresult)
                 {
-#ifdef CE_DEBUG_CACHE_USAGE
-                    std::cout << "Found result in cache" << std::endl;
-                    setCacheUsedLast(true);
-#endif
+                    if (printDebug())
+                    {
+                        std::cout << "Found result in cache" << std::endl;
+                    }
+                    setCacheWasUsed(true);
                     HashedOutput<R> ret;
                     PackType::setOutputs(hash, tresult->values, ret, args...);
                     return ret;
                 }
             }
-#ifdef CE_DEBUG_CACHE_USAGE
-            setCacheUsedLast(false);
-#endif
+            setCacheWasUsed(false);
             R ret = func(ce::get(std::forward<Args>(args))...);
             output_tuple_type results;
             HashedOutput<R> out(std::move(ret), hash);

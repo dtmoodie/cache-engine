@@ -21,9 +21,6 @@ namespace ce
         }
         else
         {
-#ifdef CE_DEBUG_CACHE_USAGE
-            setCacheUsedLast(false);
-#endif
             return func(ce::get(std::forward<Args>(args))...);
         }
     }
@@ -36,9 +33,6 @@ namespace ce
         {
             return eng->exec(func, std::forward<Args>(args)...);
         }
-#ifdef CE_DEBUG_CACHE_USAGE
-        setCacheUsedLast(false);
-#endif
         R ret = func(ce::get(std::forward<Args>(args))...);
         return HashedOutput<R>(std::move(ret), 0);
     }
