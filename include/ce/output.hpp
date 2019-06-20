@@ -1,9 +1,9 @@
 #pragma once
 #include <ce/export.hpp>
 #include <iostream>
+
 namespace ce
 {
-
     template <class T>
     struct HashedOutput
     {

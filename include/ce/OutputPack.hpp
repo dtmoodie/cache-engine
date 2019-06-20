@@ -2,6 +2,7 @@
 #include <ce/VariadicTypedef.hpp>
 #include <ce/output.hpp>
 #include <ct/hash.hpp>
+
 #include <tuple>
 
 namespace ce

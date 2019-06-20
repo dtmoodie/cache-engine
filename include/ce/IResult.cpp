@@ -1,4 +1,8 @@
 #include <ce/IResult.hpp>
-namespace ce{
-IResult::~IResult() {}
+
+namespace ce
+{
+    IResult::~IResult()
+    {
+    }
 }
