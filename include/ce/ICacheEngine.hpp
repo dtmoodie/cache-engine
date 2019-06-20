@@ -172,7 +172,7 @@ namespace ce
             {
                 std::cout << "Hash: " << hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = this->getCachedResult(hash);
+            std::shared_ptr<IResult>& result = getCachedResult(hash);
             if (result)
             {
                 std::shared_ptr<TResult<output_tuple_type>> tresult =
