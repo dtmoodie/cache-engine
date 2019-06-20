@@ -48,5 +48,7 @@ test_script:
 
 
 - sh: >-
-   cd tests
+   ./test_ce_static_function
+
+   ./test_ce_member_function
    
