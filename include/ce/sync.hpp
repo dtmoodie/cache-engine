@@ -1,4 +1,5 @@
 #pragma once
+#ifdef HAVE_CUDA
 #include <ce/OutputPack.hpp>
 #include <ce/export.hpp>
 #include <ce/output.hpp>
@@ -88,3 +89,4 @@ namespace ce
         }
     };
 }
+#endif

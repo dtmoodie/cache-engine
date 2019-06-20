@@ -1,3 +1,4 @@
+#ifdef HAVE_CUDA
 #include "sync.hpp"
 
 namespace ce
@@ -48,3 +49,4 @@ namespace ce
     {
     }
 }
+#endif
