@@ -46,7 +46,7 @@ test_script:
 
 
 - sh: >-
-   ./test_ce_static_functions
+   ./test_ce_static_function
 
-   ./test_ce_member_functions
+   ./test_ce_member_function
    
