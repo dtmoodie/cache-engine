@@ -48,7 +48,7 @@ namespace ce
         {
             OUTPUT_COUNT = 1
         };
-        using types = variadic_typedef<CvEventPool::EventPtr>;
+        using types = ct::VariadicTypedef<CvEventPool::EventPtr>;
 
         template <class TupleType>
         static void setOutputs(size_t /*hash*/, TupleType& result, cv::cuda::Stream& stream)

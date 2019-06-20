@@ -7,6 +7,7 @@ namespace ce
     template <class... T>
     struct TResult : IResult
     {
+        TResult() = default;
         TResult(std::tuple<T...>&& arg)
             : values(std::move(arg))
         {
@@ -22,6 +23,8 @@ namespace ce
     template <class... T>
     struct TResult<std::tuple<T...>> : IResult
     {
+
+        TResult() = default;
         TResult(std::tuple<T...>&& arg)
             : values(std::move(arg))
         {

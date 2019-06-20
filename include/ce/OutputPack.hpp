@@ -26,7 +26,7 @@ namespace ce
         {
             OUTPUT_COUNT = 1
         };
-        using types = variadic_typedef<decay_t<T>>;
+        using types = ct::VariadicTypedef<decay_t<T>>;
 
         template <class TupleType>
         static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out)
@@ -51,7 +51,7 @@ namespace ce
         {
             OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
         };
-        using types = typename append_to_tupple<decay_t<T>, typename OutputPack<void, Args...>::types>::type;
+        using types = typename ct::Append<decay_t<T>, typename OutputPack<void, Args...>::types>::type;
 
         template <typename TupleType>
         static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)
@@ -79,7 +79,7 @@ namespace ce
         {
             OUTPUT_COUNT = 1
         };
-        using types = variadic_typedef<decay_t<T>>;
+        using types = ct::VariadicTypedef<decay_t<T>>;
 
         template <class TupleType>
         static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)

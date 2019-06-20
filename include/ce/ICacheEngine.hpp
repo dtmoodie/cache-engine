@@ -129,7 +129,7 @@ namespace ce
         exec(void (*func)(FArgs...), Args&&... args)
         {
             using PackType = OutputPack<void, ct::remove_reference_t<Args>...>;
-            using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
+            using TupleType = typename PackType::types::tuple_type;
             const auto fhash = generateHash(func);
             const size_t hash = generateHash(std::forward<Args>(args)...);
             const auto combined_hash = combineHash(fhash, hash);
@@ -140,8 +140,7 @@ namespace ce
             std::shared_ptr<IResult>& result = getCachedResult(fhash, hash);
             if (result)
             {
-                std::shared_ptr<TResult<output_tuple_type>> tresult =
-                    std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
+                std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
                 if (tresult)
                 {
                     if (printDebug())
@@ -155,9 +154,9 @@ namespace ce
             }
             setCacheWasUsed(false);
             func(ce::get(std::forward<Args>(args))...);
-            output_tuple_type results;
+            TupleType results;
             PackType::saveOutputs(combined_hash, results, args...);
-            result.reset(new TResult<output_tuple_type>(std::move(results)));
+            result.reset(new TResult<TupleType>(std::move(results)));
         }
 
         // function returns
@@ -165,7 +164,7 @@ namespace ce
         HashedOutput<R> exec(R (*func)(FArgs...), Args&&... args)
         {
             using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<Args>...>;
-            using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
+            using TupleType = typename PackType::types::tuple_type;
             const size_t fhash = generateHash(func);
             const size_t hash = generateHash(std::forward<Args>(args)...);
             const size_t combined_hash = combineHash(fhash, hash);
@@ -176,8 +175,7 @@ namespace ce
             std::shared_ptr<IResult>& result = getCachedResult(fhash, hash);
             if (result)
             {
-                std::shared_ptr<TResult<output_tuple_type>> tresult =
-                    std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
+                std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
                 if (tresult)
                 {
                     if (printDebug())
@@ -192,10 +190,10 @@ namespace ce
             }
             setCacheWasUsed(false);
             R ret = func(ce::get(std::forward<Args>(args))...);
-            output_tuple_type results;
+            TupleType results;
             HashedOutput<R> out(std::move(ret), hash);
             PackType::saveOutputs(combined_hash, results, out, args...);
-            result.reset(new TResult<output_tuple_type>(std::move(results)));
+            result.reset(new TResult<TupleType>(std::move(results)));
             return out;
         }
 
@@ -207,7 +205,7 @@ namespace ce
         HashedOutput<R> exec(R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
         {
             using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<ARGS>...>;
-            using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
+            using TupleType = typename PackType::types::tuple_type;
 
             const auto& obj_ref = getObjectRef(obj);
             auto obj_hash = getObjectHash(obj);
@@ -217,8 +215,7 @@ namespace ce
             std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
             if (result)
             {
-                std::shared_ptr<TResult<output_tuple_type>> tresult =
-                    std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
+                std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
                 if (tresult)
                 {
                     HashedOutput<R> ret;
@@ -232,10 +229,10 @@ namespace ce
                 }
             }
             setCacheWasUsed(false);
-            output_tuple_type results;
+            TupleType results;
             HashedOutput<R> out((obj_ref.*func)(ce::get(std::forward<ARGS>(args))...), combined_hash);
             PackType::saveOutputs(combined_hash, results, out, args...);
-            result.reset(new TResult<output_tuple_type>(std::move(results)));
+            result.reset(new TResult<TupleType>(std::move(results)));
             return out;
         }
 
@@ -249,7 +246,7 @@ namespace ce
                 PackType::OUTPUT_COUNT != 0,
                 "for a void returning const function, there must be some kind of output passed in as an argument");
 
-            using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
+            using TupleType = typename PackType::types::tuple_type;
 
             const auto& obj = getObjectRef(object);
             size_t obj_hash = getObjectHash(object);
@@ -264,8 +261,7 @@ namespace ce
             std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
             if (result)
             {
-                std::shared_ptr<TResult<output_tuple_type>> tresult =
-                    std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
+                std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
                 if (tresult)
                 {
                     if (printDebug())
@@ -279,9 +275,11 @@ namespace ce
             }
             setCacheWasUsed(false);
             (obj.*func)(ce::get(std::forward<ARGS>(args))...);
-            output_tuple_type results;
-            PackType::saveOutputs(combined_hash, results, args...);
-            result.reset(new TResult<output_tuple_type>(std::move(results)));
+            auto results = std::make_shared<TResult<TupleType>>();
+            // TupleType results;
+            PackType::saveOutputs(combined_hash, results->values, args...);
+            // result.reset(new TResult<TupleType>(std::move(results)));
+            result = results;
         }
     };
 

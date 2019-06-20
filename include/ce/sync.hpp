@@ -36,7 +36,7 @@ namespace ce
         {
             OUTPUT_COUNT = 1
         };
-        typedef variadic_typedef<EventPool::EventPtr> types;
+        using types = ct::VariadicTypedef<EventPool::EventPtr>;
 
         template <class TupleType>
         static void setOutputs(size_t hash, TupleType& result, ::cudaStream_t& stream)
@@ -67,7 +67,7 @@ namespace ce
         {
             OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
         };
-        typedef variadic_typedef<EventPool::EventPtr> types;
+        using types = ct::VariadicTypedef<EventPool::EventPtr>;
 
         template <class TupleType>
         static void setOutputs(size_t hash, TupleType& result, cudaStream_t& stream, Args&... args)

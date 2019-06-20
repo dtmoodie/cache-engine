@@ -209,14 +209,13 @@ namespace ce
         if (eng)
         {
             using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<Args>...>;
-            using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
+            using TupleType = typename PackType::types::tuple_type;
             const auto arg_hash = generateHash(obj_hash, std::forward<Args>(args)...);
             const size_t combined_hash = generateHash(m_fhash, arg_hash);
             std::shared_ptr<IResult>& result = eng->getCachedResult(m_fhash, arg_hash);
             if (result)
             {
-                std::shared_ptr<TResult<output_tuple_type>> tresult =
-                    std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
+                std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
                 if (tresult)
                 {
                     HashedOutput<R> ret;
@@ -227,10 +226,10 @@ namespace ce
                     return ret;
                 }
             }
-            output_tuple_type results;
+            TupleType results;
             HashedOutput<R> out((obj.*m_func)(ce::get(std::forward<Args>(args))...), combined_hash);
             PackType::saveOutputs(combined_hash, results, out, args...);
-            result.reset(new TResult<output_tuple_type>(std::move(results)));
+            result.reset(new TResult<TupleType>(std::move(results)));
             return out;
         }
         HashedOutput<R> out((obj.*m_func)(ce::get(std::forward<Args>(args))...));
@@ -269,7 +268,7 @@ namespace ce
     ExecutionToken<T, void, FArgs...>::operator()(T2& object, Args&&... args)
     {
         using PackType = OutputPack<void, ct::remove_reference_t<Args>...>;
-        using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
+        using TupleType = typename PackType::types::tuple_type;
 
         T& obj = getObjectRef(object);
         size_t& obj_hash = getObjectHash(object);
@@ -288,8 +287,7 @@ namespace ce
             std::shared_ptr<IResult>& result = eng->getCachedResult(m_fhash, arg_hash);
             if (result)
             {
-                std::shared_ptr<TResult<output_tuple_type>> tresult =
-                    std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
+                std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
                 if (tresult)
                 {
                     if (eng->printDebug())
@@ -303,9 +301,9 @@ namespace ce
             }
             eng->setCacheWasUsed(false);
             (obj.*m_func)(ce::get(std::forward<Args>(args))...);
-            output_tuple_type results;
+            TupleType results;
             PackType::saveOutputs(combined_hash, results, args...);
-            result.reset(new TResult<output_tuple_type>(std::move(results)));
+            result.reset(new TResult<TupleType>(std::move(results)));
         }
         else
         {
