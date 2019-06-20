@@ -9,9 +9,8 @@
 namespace ce
 {
 
-    size_t combineHash(size_t seed, const cv::cuda::Stream& v)
+    size_t combineHash(size_t seed, const cv::cuda::Stream&)
     {
-        (void)v;
         return seed;
     }
 
@@ -49,21 +48,21 @@ namespace ce
         {
             OUTPUT_COUNT = 1
         };
-        typedef variadic_typedef<CvEventPool::EventPtr> types;
+        using types = variadic_typedef<CvEventPool::EventPtr>;
 
         template <class TupleType>
-        static void setOutputs(size_t hash, TupleType& result, cv::cuda::Stream& stream)
+        static void setOutputs(size_t /*hash*/, TupleType& result, cv::cuda::Stream& stream)
         {
-            (void)hash;
             CvEventPool::EventPtr& ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
             if (*(ev.m_stream) != stream)
+            {
                 stream.waitEvent(*ev);
+            }
         }
 
         template <class TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, cv::cuda::Stream& stream)
+        static void saveOutputs(size_t /*hash*/, TupleType& result, cv::cuda::Stream& stream)
         {
-            (void)hash;
             if (stream)
             {
                 CvEventPool::EventPtr& ev = std::get<std::tuple_size<TupleType>::value - 1>(result);

@@ -25,7 +25,7 @@ namespace ce
         {
             OUTPUT_COUNT = 1
         };
-        typedef variadic_typedef<decay_t<T>> types;
+        using types = variadic_typedef<decay_t<T>>;
 
         template <class TupleType>
         static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out)
@@ -50,7 +50,7 @@ namespace ce
         {
             OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT + 1
         };
-        typedef typename append_to_tupple<decay_t<T>, typename OutputPack<void, Args...>::types>::type types;
+        using types = typename append_to_tupple<decay_t<T>, typename OutputPack<void, Args...>::types>::type;
 
         template <typename TupleType>
         static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)
@@ -78,7 +78,7 @@ namespace ce
         {
             OUTPUT_COUNT = 1
         };
-        typedef variadic_typedef<decay_t<T>> types;
+        using types = variadic_typedef<decay_t<T>>;
 
         template <class TupleType>
         static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)
@@ -109,8 +109,7 @@ namespace ce
         {
             OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
         };
-        typedef typename OutputPack<void, Args...>::types types;
-        // typedef typename convert_in_tuple<types>::type TupleType;
+        using types = typename OutputPack<void, Args...>::types;
 
         template <typename TupleType>
         static void setOutputs(size_t hash, TupleType& result, T&, Args&... args)
@@ -133,11 +132,11 @@ namespace ce
             OUTPUT_COUNT = 0
         };
         template <class TupleType>
-        static void setOutputs(size_t hash, TupleType& result, T& out)
+        static void setOutputs(size_t, TupleType&, T&)
         {
         }
         template <class TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, T& out)
+        static void saveOutputs(size_t, TupleType&, T&)
         {
         }
     };
@@ -151,14 +150,14 @@ namespace ce
             OUTPUT_COUNT = OutputPack<void, Args...>::OUTPUT_COUNT
         };
         template <class TupleType>
-        static void setOutputs(size_t hash, TupleType& result, T& out, Args&... args)
+        static void setOutputs(size_t hash, TupleType& result, T&, Args&... args)
         {
             OutputPack<void, Args...>::setOutputs(hash, result, args...);
         }
         template <class TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, T& out, Args&... args)
+        static void saveOutputs(size_t hash, TupleType& result, T&, Args&... args)
         {
             OutputPack<void, Args...>::saveOutputs(hash, result, args...);
-        };
+        }
     };
 }

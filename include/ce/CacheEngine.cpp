@@ -22,16 +22,27 @@ namespace ce
     ICacheEngine* ICacheEngine::instance()
     {
         if (t_engine)
+        {
             return t_engine.get();
+        }
         return g_engine.get();
+    }
+
+    std::unique_ptr<ICacheEngine> ICacheEngine::create()
+    {
+        return std::unique_ptr<ICacheEngine>(new CacheEngine());
     }
 
     void ICacheEngine::setEngine(std::unique_ptr<ICacheEngine>&& engine, bool is_thread_local)
     {
         if (is_thread_local)
+        {
             t_engine = std::move(engine);
+        }
         else
+        {
             g_engine = std::move(engine);
+        }
     }
 
     void ICacheEngine::releaseEngine(bool thread_engine)
@@ -78,10 +89,5 @@ namespace ce
     std::shared_ptr<IResult>& CacheEngine::getCachedResult(size_t hash)
     {
         return m_result_cache[hash];
-    }
-
-    std::unique_ptr<ICacheEngine> ICacheEngine::create()
-    {
-        return std::unique_ptr<ICacheEngine>(new CacheEngine());
     }
 }

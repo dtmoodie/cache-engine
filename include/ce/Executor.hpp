@@ -8,62 +8,15 @@
 
 #include <cstring>
 #include <ct/StringView.hpp>
-#include <ct/types/TArrayView.hpp>
+
 #include <iostream>
 #include <type_traits>
 
+// This whole file is full of helper functions for executing member functions on objects.
+// The trivial case is when it's a const member function and thus we can just invoke it and memoize the results
+// however the non trivial case invoves potential state change :/
 namespace ce
 {
-
-    template <class T, class R, class... FArgs>
-    struct ConstExecutionToken;
-
-    template <class T, class R, class... FArgs>
-    struct ExecutionToken;
-
-    template <class Token, class Executor, class T, class R, class... FArgs>
-    struct ExecutorHelper
-    {
-        ExecutorHelper(Token&& token, Executor& executor);
-        template <class... Args>
-        R operator()(Args&&... args);
-
-        Executor& m_executor;
-        Token m_token;
-    };
-
-    template <class T, class Derived>
-    struct ExecutorBase : public Derived
-    {
-        template <class... Args>
-        ExecutorBase(Args&&... args);
-
-        template <class R, class... FArgs>
-        ExecutorHelper<ExecutionToken<T, R, FArgs...>, ExecutorBase<T, Derived>, T, R, FArgs...>
-        exec(R (T::*func)(FArgs...));
-
-        template <class R, class... FArgs>
-        ExecutorHelper<ConstExecutionToken<T, R, FArgs...>, ExecutorBase<T, Derived>, T, R, FArgs...>
-        exec(R (T::*func)(FArgs...) const);
-
-        size_t m_hash = generateHash();
-    };
-
-    template <class T>
-    struct ExecutorRef
-    {
-        ExecutorRef(T& obj);
-        T& m_obj;
-    };
-
-    template <class T>
-    struct ExecutorOwner
-    {
-        template <class... Args>
-        ExecutorOwner(Args&&... args);
-
-        T m_obj;
-    };
 
     template <class T>
     ExecutorBase<T, ExecutorRef<T>> makeExecutor(T& obj);
@@ -76,30 +29,6 @@ namespace ce
 
     template <class T>
     ExecutorBase<T, ExecutorRef<T>> makeExecutor(HashedOutput<T&>& obj);
-
-    template <class T>
-    T& getObjectRef(ExecutorBase<T, ExecutorRef<T>>& executor);
-
-    template <class T>
-    const T& getObjectRef(const ExecutorBase<T, ExecutorRef<T>>& executor);
-
-    template <class T>
-    T& getObjectRef(ExecutorBase<T, ExecutorOwner<T>>& executor);
-
-    template <class T>
-    const T& getObjectRef(const ExecutorBase<T, ExecutorOwner<T>>& executor);
-
-    template <class T>
-    size_t& getObjectHash(ExecutorBase<T, ExecutorRef<T>>& executor);
-
-    template <class T>
-    size_t& getObjectHash(ExecutorBase<T, ExecutorOwner<T>>& executor);
-
-    template <class T>
-    size_t getObjectHash(const ExecutorBase<T, ExecutorRef<T>>& executor);
-
-    template <class T>
-    size_t getObjectHash(const ExecutorBase<T, ExecutorOwner<T>>& executor);
 
     template <class T, class R, class... FArgs>
     struct ExecutionToken
@@ -168,23 +97,6 @@ namespace ce
 
 namespace ce
 {
-    template <class R, class T, class... ARGS>
-    constexpr size_t memberFunctionPointerValue(R (T::*ptr)(ARGS...))
-    {
-        return *ct::ptrCast<size_t>(&ptr);
-    }
-
-    template <class R, class T, class... ARGS>
-    constexpr size_t memberFunctionPointerValue(R (T::*ptr)(ARGS...) const)
-    {
-        return *ct::ptrCast<size_t>(&ptr);
-    }
-
-    template <class R, class T>
-    constexpr size_t memberFunctionPointerValue(R (T::*ptr)() const)
-    {
-        return *ct::ptrCast<size_t>(&ptr);
-    }
 
     template <class Token, class Executor, class T, class R, class... FArgs>
     struct ExecutorHelper;
@@ -275,54 +187,6 @@ namespace ce
         ExecutorBase<T, ExecutorRef<T>> ret(obj.m_ref);
         ret.m_hash = obj.m_hash;
         return ret;
-    }
-
-    template <class T>
-    T& getObjectRef(ExecutorBase<T, ExecutorRef<T>>& executor)
-    {
-        return executor.m_obj;
-    }
-
-    template <class T>
-    const T& getObjectRef(const ExecutorBase<T, ExecutorRef<T>>& executor)
-    {
-        return executor.m_obj;
-    }
-
-    template <class T>
-    T& getObjectRef(ExecutorBase<T, ExecutorOwner<T>>& executor)
-    {
-        return executor.m_obj;
-    }
-
-    template <class T>
-    const T& getObjectRef(const ExecutorBase<T, ExecutorOwner<T>>& executor)
-    {
-        return executor.m_obj;
-    }
-
-    template <class T>
-    size_t& getObjectHash(ExecutorBase<T, ExecutorRef<T>>& executor)
-    {
-        return executor.m_hash;
-    }
-
-    template <class T>
-    size_t& getObjectHash(ExecutorBase<T, ExecutorOwner<T>>& executor)
-    {
-        return executor.m_hash;
-    }
-
-    template <class T>
-    size_t getObjectHash(const ExecutorBase<T, ExecutorRef<T>>& executor)
-    {
-        return executor.m_hash;
-    }
-
-    template <class T>
-    size_t getObjectHash(const ExecutorBase<T, ExecutorOwner<T>>& executor)
-    {
-        return executor.m_hash;
     }
 
     template <class T, class R, class... FArgs>
@@ -476,37 +340,10 @@ namespace ce
     HashedOutput<R> ConstExecutionToken<T, R, FArgs...>::operator()(const T2& object, Args&&... args)
     {
         const T& obj = getObjectRef(object);
-        size_t obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng)
         {
-            typedef OutputPack<void, HashedOutput<R>, ct::remove_reference_t<Args>...> PackType;
-            typedef typename convert_in_tuple<typename PackType::types>::type output_tuple_type;
-            size_t hash = generateHash(obj_hash, m_fhash, args...);
-            std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
-            if (result)
-            {
-                std::shared_ptr<TResult<output_tuple_type>> tresult =
-                    std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
-                if (tresult)
-                {
-                    HashedOutput<R> ret;
-                    if (eng->printDebug())
-                    {
-                        std::cout << "Found result in cache" << std::endl;
-                    }
-                    eng->setCacheWasUsed(true);
-                    PackType::setOutputs(hash, tresult->values, ret, args...);
-                    return ret;
-                }
-            }
-            eng->setCacheWasUsed(false);
-            R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
-            output_tuple_type results;
-            HashedOutput<R> out(std::move(ret), hash);
-            PackType::saveOutputs(hash, results, out, args...);
-            result.reset(new TResult<output_tuple_type>(std::move(results)));
-            return out;
+            return eng->exec(m_func, object, std::forward<Args>(args)...);
         }
         R ret = (obj.*m_func)(ce::get(std::forward<Args>(args))...);
         HashedOutput<R> out(std::move(ret));
@@ -526,39 +363,10 @@ namespace ce
     ConstExecutionToken<T, void, FArgs...>::operator()(const T2& object, Args&&... args)
     {
         const T& obj = getObjectRef(object);
-        size_t obj_hash = getObjectHash(object);
         ICacheEngine* eng = ICacheEngine::instance();
         if (eng)
         {
-            using PackType = OutputPack<void, ct::remove_reference_t<Args>...>;
-            using output_tuple_type = typename convert_in_tuple<typename PackType::types>::type;
-            size_t hash = generateHash(obj_hash, args...);
-            hash = combineHash(hash, m_fhash);
-            if (eng->printDebug())
-            {
-                std::cout << "Hash: " << hash << std::endl;
-            }
-            std::shared_ptr<IResult>& result = eng->getCachedResult(hash);
-            if (result)
-            {
-                std::shared_ptr<TResult<output_tuple_type>> tresult =
-                    std::dynamic_pointer_cast<TResult<output_tuple_type>>(result);
-                if (tresult)
-                {
-                    if (eng->printDebug())
-                    {
-                        std::cout << "Found result in cache" << std::endl;
-                    }
-                    eng->setCacheWasUsed(true);
-                    PackType::setOutputs(hash, tresult->values, args...);
-                    return;
-                }
-            }
-            eng->setCacheWasUsed(false);
-            (obj.*m_func)(ce::get(std::forward<Args>(args))...);
-            output_tuple_type results;
-            PackType::saveOutputs(hash, results, args...);
-            result.reset(new TResult<output_tuple_type>(std::move(results)));
+            eng->exec(m_func, object, std::forward<Args>(args)...);
         }
         else
         {
