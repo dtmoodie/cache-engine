@@ -3,6 +3,7 @@
 #include <ce/output.hpp>
 #include <ct/hash.hpp>
 
+#include <memory>
 #include <tuple>
 
 namespace ce
@@ -20,6 +21,24 @@ namespace ce
     };
 
     template <class T>
+    T deepCopy(T data)
+    {
+        return data;
+    }
+
+    template <class T>
+    std::shared_ptr<T> deepCopy(std::shared_ptr<T> data)
+    {
+        return std::make_shared<T>(*data);
+    }
+
+    template <class T>
+    std::shared_ptr<const T> deepCopy(std::shared_ptr<const T> data)
+    {
+        return data;
+    }
+
+    template <class T>
     struct OutputPack<void, HashedOutput<T>>
     {
         enum
@@ -29,15 +48,15 @@ namespace ce
         using types = ct::VariadicTypedef<decay_t<T>>;
 
         template <class TupleType>
-        static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out)
+        static void setOutputs(size_t hash, const TupleType& result, HashedOutput<T>& out)
         {
-            ce::get(out) = std::get<std::tuple_size<TupleType>::value - 1>(result);
+            ce::get(out) = deepCopy(std::get<std::tuple_size<TupleType>::value - 1>(result));
             out.m_hash = ct::combineHash(hash, std::tuple_size<TupleType>::value - 1);
         }
         template <class TupleType>
         static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out)
         {
-            std::get<std::tuple_size<TupleType>::value - 1>(result) = ce::get(out);
+            std::get<std::tuple_size<TupleType>::value - 1>(result) = deepCopy(ce::get(out));
             out.m_hash = ct::combineHash(hash, std::tuple_size<TupleType>::value - 1);
         }
     };
@@ -54,17 +73,17 @@ namespace ce
         using types = typename ct::Append<decay_t<T>, typename OutputPack<void, Args...>::types>::type;
 
         template <typename TupleType>
-        static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)
+        static void setOutputs(size_t hash, const TupleType& result, HashedOutput<T>& out, Args&... args)
         {
-            ce::get(out) = std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT>(result);
+            ce::get(out) = deepCopy(std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT>(result));
             out.m_hash = ct::combineHash(hash, std::tuple_size<TupleType>::value - OUTPUT_COUNT);
             OutputPack<void, Args...>::setOutputs(hash, result, args...);
         }
 
         template <typename TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)
+        static void saveOutputs(size_t hash, TupleType& result, const HashedOutput<T>& out, Args&... args)
         {
-            std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT>(result) = ce::get(out);
+            std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT>(result) = deepCopy(ce::get(out));
             out.m_hash = ct::combineHash(hash, std::tuple_size<TupleType>::value - OUTPUT_COUNT);
             OutputPack<void, Args...>::saveOutputs(hash, result, args...);
         }
@@ -82,10 +101,10 @@ namespace ce
         using types = ct::VariadicTypedef<decay_t<T>>;
 
         template <class TupleType>
-        static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)
+        static void setOutputs(size_t hash, const TupleType& result, HashedOutput<T>& out, Args&... args)
         {
-            ce::get(out) =
-                std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result);
+            ce::get(out) = deepCopy(
+                std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result));
             out.m_hash =
                 ct::combineHash(hash, std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1);
             OutputPack<void, Args...>::setOutputs(hash, result, args...);
@@ -95,7 +114,7 @@ namespace ce
         static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)
         {
             std::get<std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1>(result) =
-                ce::get(out);
+                deepCopy(ce::get(out));
             out.m_hash =
                 ct::combineHash(hash, std::tuple_size<TupleType>::value - OutputPack<void, Args...>::OUTPUT_COUNT - 1);
             OutputPack<void, Args...>::saveOutputs(hash, result, args...);

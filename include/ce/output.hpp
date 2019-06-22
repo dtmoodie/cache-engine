@@ -95,6 +95,12 @@ namespace ce
     }
 
     template <class T>
+    const T& get(const HashedOutput<T>& data)
+    {
+        return data.m_ref;
+    }
+
+    template <class T>
     struct HashSelector<HashedOutput<T>, void, 9>
     {
         static size_t generateHash(const HashedOutput<T>& data)
