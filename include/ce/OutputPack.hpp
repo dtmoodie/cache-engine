@@ -73,7 +73,7 @@ namespace ce
         using types = typename ct::Append<decay_t<T>, typename OutputPack<void, Args...>::types>::type;
 
         template <typename TupleType>
-        static void setOutputs(size_t hash, const TupleType& result, HashedOutput<T>& out, Args&... args)
+        static void setOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)
         {
             ce::get(out) = deepCopy(std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT>(result));
             out.m_hash = ct::combineHash(hash, std::tuple_size<TupleType>::value - OUTPUT_COUNT);
@@ -81,7 +81,7 @@ namespace ce
         }
 
         template <typename TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, const HashedOutput<T>& out, Args&... args)
+        static void saveOutputs(size_t hash, TupleType& result, HashedOutput<T>& out, Args&... args)
         {
             std::get<std::tuple_size<TupleType>::value - OUTPUT_COUNT>(result) = deepCopy(ce::get(out));
             out.m_hash = ct::combineHash(hash, std::tuple_size<TupleType>::value - OUTPUT_COUNT);
