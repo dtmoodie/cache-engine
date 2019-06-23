@@ -6,6 +6,25 @@
 
 namespace ce
 {
+    template<class T>
+    struct HashedBase
+    {
+        operator T&()
+        {
+            return *static_cast<T>(this);
+        }
+
+        operator const T&() const
+        {
+            return *static_cast<T>(this);
+        }
+
+        size_t hash() const{return m_hash;}
+        void setHash(size_t val){m_hash = val;}
+    private:
+        size_t m_hash = 0;
+    };
+
     template <class T>
     struct HashedOutput
     {
@@ -82,11 +101,6 @@ namespace ce
         return HashedOutput<T*>(ptr);
     }
 
-    template <class T>
-    T& get(HashedOutput<T>&& data)
-    {
-        return data.m_ref;
-    }
 
     template <class T>
     T& get(HashedOutput<T>& data)
@@ -94,10 +108,11 @@ namespace ce
         return data.m_ref;
     }
 
+
     template <class T>
-    const T& get(const HashedOutput<T>& data)
+    T& get(HashedBase<T>& data)
     {
-        return data.m_ref;
+        return data;
     }
 
     template <class T>
@@ -109,22 +124,12 @@ namespace ce
         }
     };
 
-    template <class T>
-    size_t generateHash(const HashedOutput<T>& v)
+    template<class T>
+    struct HashSelector<HashedBase<T>, void, 9>
     {
-        return v.m_hash;
-    }
-
-    template <class T>
-    size_t generateHash(HashedOutput<T>& v)
-    {
-        return v.m_hash;
-    }
-
-    template <class T>
-    size_t generateHash(HashedOutput<T>&& v)
-    {
-        return v.m_hash;
-    }
-
+        static size_t generateHash(const HashedBase<T>& v)
+        {
+            return v.hash();
+        }
+    };
 } // namespace ce
