@@ -124,20 +124,19 @@ namespace ce
         // Static functions
         /////////////////////////////////////////////////////////////////////////////
         // Function doesn't return
-        template <class... FArgs, class... Args>
-        typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
-        exec(void (*func)(FArgs...), Args&&... args)
+
+        template<class... FArgs, class ... Args>
+        void exec(size_t arg_hash, void(*func)(FArgs...), Args&& ... args)
         {
             using PackType = OutputPack<void, ct::remove_reference_t<Args>...>;
             using TupleType = typename PackType::types::tuple_type;
             const auto fhash = generateHash(func);
-            const size_t hash = generateHash(std::forward<Args>(args)...);
-            const auto combined_hash = combineHash(fhash, hash);
+            const auto combined_hash = combineHash(fhash, arg_hash);
             if (printDebug())
             {
-                std::cout << "Hash: " << hash << std::endl;
+                std::cout << "Hash: " << arg_hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = getCachedResult(fhash, hash);
+            std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
@@ -159,20 +158,28 @@ namespace ce
             result.reset(new TResult<TupleType>(std::move(results)));
         }
 
+        template <class... FArgs, class... Args>
+        typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
+        exec(void (*func)(FArgs...), Args&&... args)
+        {
+            const size_t hash = generateHash(std::forward<Args>(args)...);
+            exec(hash, func, std::forward<Args>(args)...);
+        }
+
         // function returns
+
         template <class R, class... FArgs, class... Args>
-        HashedOutput<R> exec(R (*func)(FArgs...), Args&&... args)
+        HashedOutput<R> exec(size_t arg_hash, R (*func)(FArgs...), Args&&... args)
         {
             using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<Args>...>;
             using TupleType = typename PackType::types::tuple_type;
             const size_t fhash = generateHash(func);
-            const size_t hash = generateHash(std::forward<Args>(args)...);
-            const size_t combined_hash = combineHash(fhash, hash);
+            const size_t combined_hash = combineHash(fhash, arg_hash);
             if (printDebug())
             {
-                std::cout << "Hash: " << hash << std::endl;
+                std::cout << "Hash: " << arg_hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = getCachedResult(fhash, hash);
+            std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
@@ -191,18 +198,27 @@ namespace ce
             setCacheWasUsed(false);
             R ret = func(ce::get(std::forward<Args>(args))...);
             TupleType results;
-            HashedOutput<R> out(std::move(ret), hash);
+            HashedOutput<R> out(std::move(ret), arg_hash);
             PackType::saveOutputs(combined_hash, results, out, args...);
             result.reset(new TResult<TupleType>(std::move(results)));
             return out;
         }
 
+        template <class R, class... FArgs, class... Args>
+        HashedOutput<R> exec(R (*func)(FArgs...), Args&&... args)
+        {
+            const size_t hash = generateHash(std::forward<Args>(args)...);
+            return exec(hash, func, std::forward<Args>(args)...);
+        }
+
         ///////////////////////////////////////////////////////////////////////////
         /// Member functions
         ///////////////////////////////////////////////////////////////////////////
+
+
         // This is the case where this is a const function with a return
         template <class T, class U, class R, class... FARGS, class... ARGS>
-        HashedOutput<R> exec(R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
+        HashedOutput<R> exec(size_t arg_hash, R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
         {
             using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<ARGS>...>;
             using TupleType = typename PackType::types::tuple_type;
@@ -210,7 +226,6 @@ namespace ce
             const auto& obj_ref = getObjectRef(obj);
             auto obj_hash = getObjectHash(obj);
             const auto fhash = memberFunctionPointerValue(func);
-            const auto arg_hash = generateHash(obj_hash, args...);
             const auto combined_hash = combineHash(fhash, arg_hash);
             std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
             if (result)
@@ -236,24 +251,29 @@ namespace ce
             return out;
         }
 
+        template <class T, class U, class R, class... FARGS, class... ARGS>
+        HashedOutput<R> exec(R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
+        {
+            auto obj_hash = getObjectHash(obj);
+            const auto arg_hash = generateHash(obj_hash, args...);
+            return exec(arg_hash, func, obj, std::forward<ARGS>(args)...);
+        }
+
         // Const function without a return, ie return is passed in as an argument
         template <class T, class U, class... FARGS, class... ARGS>
-        void exec(void (T::*func)(FARGS...) const, const U& object, ARGS&&... args)
+        void exec(size_t arg_hash, void (T::*func)(FARGS...) const, const U& object, ARGS&&... args)
         {
             using PackType = OutputPack<void, ct::remove_reference_t<ARGS>...>;
+            using TupleType = typename PackType::types::tuple_type;
 
             static_assert(
                 PackType::OUTPUT_COUNT != 0,
                 "for a void returning const function, there must be some kind of output passed in as an argument");
 
-            using TupleType = typename PackType::types::tuple_type;
-
             const auto& obj = getObjectRef(object);
-            size_t obj_hash = getObjectHash(object);
             const auto fhash = memberFunctionPointerValue(func);
-
-            size_t arg_hash = generateHash(obj_hash, args...);
             const auto combined_hash = combineHash(fhash, arg_hash);
+
             if (printDebug())
             {
                 std::cout << "Hash: " << arg_hash << std::endl;
@@ -273,6 +293,7 @@ namespace ce
                     return;
                 }
             }
+
             setCacheWasUsed(false);
             (obj.*func)(ce::get(std::forward<ARGS>(args))...);
             auto results = std::make_shared<TResult<TupleType>>();
@@ -280,6 +301,14 @@ namespace ce
             PackType::saveOutputs(combined_hash, results->values, args...);
             // result.reset(new TResult<TupleType>(std::move(results)));
             result = results;
+        }
+
+        template <class T, class U, class... FARGS, class... ARGS>
+        void exec(void (T::*func)(FARGS...) const, const U& object, ARGS&&... args)
+        {
+            size_t obj_hash = getObjectHash(object);
+            size_t arg_hash = generateHash(obj_hash, args...);
+            exec(arg_hash, func, object, std::forward<ARGS>(args)...);
         }
     };
 
