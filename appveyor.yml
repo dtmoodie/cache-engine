@@ -38,7 +38,7 @@ before_build:
 
 build_script:
 - cmd: >-
-    msbuild ce.sln
+    msbuild cache-engine.sln
 
 - sh: make
 
