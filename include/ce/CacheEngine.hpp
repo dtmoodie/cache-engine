@@ -10,7 +10,8 @@ namespace ce
     {
         CacheEngine(bool debug_print = false);
         ~CacheEngine() override;
-        std::shared_ptr<IResult>& getCachedResult(size_t fhash, size_t hash) override;
+        std::shared_ptr<IResult> getCachedResult(size_t fhash, size_t hash) override;
+        void pushCachedResult(std::shared_ptr<IResult>, size_t fhash, size_t arg_hash) override;
 
         bool printDebug() const override;
         bool wasCacheUsedLast() const override;

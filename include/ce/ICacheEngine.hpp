@@ -114,7 +114,8 @@ namespace ce
         static void setEngine(std::shared_ptr<ICacheEngine> engine);
 
         // These are the interface functions that must be satisfied by the implementation
-        virtual std::shared_ptr<IResult>& getCachedResult(size_t fhash, size_t hash) = 0;
+        virtual std::shared_ptr<IResult> getCachedResult(size_t fhash, size_t hash) = 0;
+        virtual void pushCachedResult(std::shared_ptr<IResult>, size_t fhash, size_t arg_hash) = 0;
         virtual bool printDebug() const = 0;
         virtual bool wasCacheUsedLast() const = 0;
         virtual void setCacheWasUsed(bool) = 0;
@@ -136,7 +137,7 @@ namespace ce
             {
                 std::cout << "Hash: " << arg_hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
+            std::shared_ptr<IResult> result = getCachedResult(fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
@@ -156,6 +157,7 @@ namespace ce
             TupleType results;
             PackType::saveOutputs(combined_hash, results, args...);
             result.reset(new TResult<TupleType>(std::move(results)));
+            pushCachedResult(result, fhash, arg_hash);
         }
 
         template <class... FArgs, class... Args>
@@ -179,7 +181,7 @@ namespace ce
             {
                 std::cout << "Hash: " << arg_hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
+            std::shared_ptr<IResult> result = getCachedResult(fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
@@ -201,6 +203,7 @@ namespace ce
             HashedOutput<R> out(std::move(ret), arg_hash);
             PackType::saveOutputs(combined_hash, results, out, args...);
             result.reset(new TResult<TupleType>(std::move(results)));
+            pushCachedResult(result, fhash, arg_hash);
             return out;
         }
 
@@ -224,10 +227,9 @@ namespace ce
             using TupleType = typename PackType::types::tuple_type;
 
             const auto& obj_ref = getObjectRef(obj);
-            auto obj_hash = getObjectHash(obj);
             const auto fhash = memberFunctionPointerValue(func);
             const auto combined_hash = combineHash(fhash, arg_hash);
-            std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
+            std::shared_ptr<IResult> result = getCachedResult(fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
@@ -248,11 +250,54 @@ namespace ce
             HashedOutput<R> out((obj_ref.*func)(ce::get(std::forward<ARGS>(args))...), combined_hash);
             PackType::saveOutputs(combined_hash, results, out, args...);
             result.reset(new TResult<TupleType>(std::move(results)));
+            pushCachedResult(result, fhash, arg_hash);
             return out;
         }
 
         template <class T, class U, class R, class... FARGS, class... ARGS>
         HashedOutput<R> exec(R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
+        {
+            auto obj_hash = getObjectHash(obj);
+            const auto arg_hash = generateHash(obj_hash, args...);
+            return exec(arg_hash, func, obj, std::forward<ARGS>(args)...);
+        }
+
+        template <class T, class U, class R, class... FARGS, class... ARGS>
+        HashedOutput<R> exec(size_t arg_hash, R (T::*func)(FARGS...), EmptyInput<U>& obj, ARGS&&... args)
+        {
+            using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<ARGS>...>;
+            using TupleType = typename PackType::types::tuple_type;
+
+            auto& obj_ref = getObjectRef(obj);
+            const auto fhash = memberFunctionPointerValue(func);
+            const auto combined_hash = combineHash(fhash, arg_hash);
+            std::shared_ptr<IResult> result = getCachedResult(fhash, arg_hash);
+            if (result)
+            {
+                std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
+                if (tresult)
+                {
+                    HashedOutput<R> ret;
+                    if (printDebug())
+                    {
+                        std::cout << "Found result in cache" << std::endl;
+                    }
+                    setCacheWasUsed(true);
+                    PackType::setOutputs(combined_hash, tresult->values, ret, args...);
+                    return ret;
+                }
+            }
+            setCacheWasUsed(false);
+            TupleType results;
+            HashedOutput<R> out((obj_ref.*func)(ce::get(std::forward<ARGS>(args))...), combined_hash);
+            PackType::saveOutputs(combined_hash, results, out, args...);
+            result.reset(new TResult<TupleType>(std::move(results)));
+            pushCachedResult(result, fhash, arg_hash);
+            return out;
+        }
+
+        template <class T, class U, class R, class... FARGS, class... ARGS>
+        HashedOutput<R> exec(R (T::*func)(FARGS...), EmptyInput<U>&& obj, ARGS&&... args)
         {
             auto obj_hash = getObjectHash(obj);
             const auto arg_hash = generateHash(obj_hash, args...);
@@ -278,7 +323,7 @@ namespace ce
             {
                 std::cout << "Hash: " << arg_hash << std::endl;
             }
-            std::shared_ptr<IResult>& result = getCachedResult(fhash, arg_hash);
+            std::shared_ptr<IResult> result = getCachedResult(fhash, arg_hash);
             if (result)
             {
                 std::shared_ptr<TResult<TupleType>> tresult = std::dynamic_pointer_cast<TResult<TupleType>>(result);
@@ -299,8 +344,8 @@ namespace ce
             auto results = std::make_shared<TResult<TupleType>>();
             // TupleType results;
             PackType::saveOutputs(combined_hash, results->values, args...);
-            // result.reset(new TResult<TupleType>(std::move(results)));
             result = results;
+            pushCachedResult(result, fhash, arg_hash);
         }
 
         template <class T, class U, class... FARGS, class... ARGS>

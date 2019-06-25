@@ -6,22 +6,13 @@
 
 namespace ce
 {
-    template<class T>
     struct HashedBase
     {
-        operator T&()
-        {
-            return *static_cast<T>(this);
-        }
+        size_t hash() const;
 
-        operator const T&() const
-        {
-            return *static_cast<T>(this);
-        }
+        void setHash(size_t val);
 
-        size_t hash() const{return m_hash;}
-        void setHash(size_t val){m_hash = val;}
-    private:
+      private:
         size_t m_hash = 0;
     };
 
@@ -101,18 +92,16 @@ namespace ce
         return HashedOutput<T*>(ptr);
     }
 
-
     template <class T>
     T& get(HashedOutput<T>& data)
     {
         return data.m_ref;
     }
 
-
     template <class T>
-    T& get(HashedBase<T>& data)
+    T& get(HashedOutput<T&> data)
     {
-        return data;
+        return data.m_ref;
     }
 
     template <class T>
@@ -124,10 +113,10 @@ namespace ce
         }
     };
 
-    template<class T>
-    struct HashSelector<HashedBase<T>, void, 9>
+    template <class T>
+    struct HashSelector<T, typename std::enable_if<std::is_base_of<T, ce::HashedBase>::value>::type, 9>
     {
-        static size_t generateHash(const HashedBase<T>& v)
+        static size_t generateHash(const HashedBase& v)
         {
             return v.hash();
         }

@@ -156,9 +156,34 @@ namespace ce
     }
 
     template <class T>
+    EmptyInput<T&> makeEmptyInput(T& ref)
+    {
+        return {ref};
+    }
+
+    template <class T>
     T& get(EmptyInput<T>&& data)
     {
         return data.data;
+    }
+
+
+    template<class T>
+    T& getObjectRef(EmptyInput<T&>& data)
+    {
+        return data.data;
+    }
+
+    template<class T>
+    const T& getObjectRef(const EmptyInput<T&>& data)
+    {
+        return data.data;
+    }
+
+    template<class T>
+    size_t getObjectHash(const EmptyInput<T>&)
+    {
+        return 0;
     }
 
     template <class T>
