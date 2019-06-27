@@ -114,7 +114,7 @@ namespace ce
     };
 
     template <class T>
-    struct HashSelector<T, typename std::enable_if<std::is_base_of<T, ce::HashedBase>::value>::type, 9>
+    struct HashSelector<T, typename std::enable_if<std::is_base_of<ce::HashedBase, T>::value>::type, 9>
     {
         static size_t generateHash(const HashedBase& v)
         {
