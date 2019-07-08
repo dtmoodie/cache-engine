@@ -60,9 +60,13 @@ namespace ce
         return m_result_cache[combineHash(fhash, hash)];
     }
 
-
     void CacheEngine::pushCachedResult(std::shared_ptr<IResult> result, size_t fhash, size_t arg_hash)
     {
         m_result_cache[combineHash(fhash, arg_hash)] = result;
+    }
+
+    void CacheEngine::clearCache()
+    {
+        m_result_cache.clear();
     }
 }

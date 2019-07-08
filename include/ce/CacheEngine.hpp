@@ -16,6 +16,7 @@ namespace ce
         bool printDebug() const override;
         bool wasCacheUsedLast() const override;
         void setCacheWasUsed(bool) override;
+        void clearCache() override;
 
       private:
         std::unordered_map<size_t, std::shared_ptr<IResult>> m_result_cache;

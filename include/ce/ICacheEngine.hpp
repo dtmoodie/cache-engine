@@ -119,6 +119,7 @@ namespace ce
         virtual bool printDebug() const = 0;
         virtual bool wasCacheUsedLast() const = 0;
         virtual void setCacheWasUsed(bool) = 0;
+        virtual void clearCache() = 0;
 
         // This is where the magic happens, funtions templated on the function signature of that which will be invoked
         /////////////////////////////////////////////////////////////////////////////
@@ -126,8 +127,8 @@ namespace ce
         /////////////////////////////////////////////////////////////////////////////
         // Function doesn't return
 
-        template<class... FArgs, class ... Args>
-        void exec(size_t arg_hash, void(*func)(FArgs...), Args&& ... args)
+        template <class... FArgs, class... Args>
+        void exec(size_t arg_hash, void (*func)(FArgs...), Args&&... args)
         {
             using PackType = OutputPack<void, ct::remove_reference_t<Args>...>;
             using TupleType = typename PackType::types::tuple_type;
@@ -218,10 +219,10 @@ namespace ce
         /// Member functions
         ///////////////////////////////////////////////////////////////////////////
 
-
         // This is the case where this is a const function with a return
         template <class T, class U, class R, class... FARGS, class... ARGS>
-        HashedOutput<R> exec(size_t arg_hash, R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
+        typename ReturnSelector<R>::type
+        exec(size_t arg_hash, R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
         {
             using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<ARGS>...>;
             using TupleType = typename PackType::types::tuple_type;
@@ -247,7 +248,7 @@ namespace ce
             }
             setCacheWasUsed(false);
             TupleType results;
-            HashedOutput<R> out((obj_ref.*func)(ce::get(std::forward<ARGS>(args))...), combined_hash);
+            typename HashedOutput<R>::type out((obj_ref.*func)(ce::get(std::forward<ARGS>(args))...), combined_hash);
             PackType::saveOutputs(combined_hash, results, out, args...);
             result.reset(new TResult<TupleType>(std::move(results)));
             pushCachedResult(result, fhash, arg_hash);
@@ -255,7 +256,7 @@ namespace ce
         }
 
         template <class T, class U, class R, class... FARGS, class... ARGS>
-        HashedOutput<R> exec(R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
+        typename ReturnSelector<R>::type exec(R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
         {
             auto obj_hash = getObjectHash(obj);
             const auto arg_hash = generateHash(obj_hash, args...);
@@ -263,7 +264,8 @@ namespace ce
         }
 
         template <class T, class U, class R, class... FARGS, class... ARGS>
-        HashedOutput<R> exec(size_t arg_hash, R (T::*func)(FARGS...), EmptyInput<U>& obj, ARGS&&... args)
+        typename ReturnSelector<T>::type
+        exec(size_t arg_hash, R (T::*func)(FARGS...), EmptyInput<U>& obj, ARGS&&... args)
         {
             using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<ARGS>...>;
             using TupleType = typename PackType::types::tuple_type;
@@ -297,7 +299,7 @@ namespace ce
         }
 
         template <class T, class U, class R, class... FARGS, class... ARGS>
-        HashedOutput<R> exec(R (T::*func)(FARGS...), EmptyInput<U>&& obj, ARGS&&... args)
+        typename ReturnSelector<T>::type exec(R (T::*func)(FARGS...), EmptyInput<U>&& obj, ARGS&&... args)
         {
             auto obj_hash = getObjectHash(obj);
             const auto arg_hash = generateHash(obj_hash, args...);

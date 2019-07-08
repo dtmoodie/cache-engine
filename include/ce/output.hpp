@@ -19,6 +19,8 @@ namespace ce
     template <class T>
     struct HashedOutput
     {
+        using type = HashedOutput<T>;
+
         HashedOutput()
         {
         }
@@ -46,6 +48,7 @@ namespace ce
     template <class T>
     struct HashedOutput<T&>
     {
+        using type = HashedOutput<T&>;
 
         HashedOutput(T& ref)
             : m_ref(ref)
@@ -71,6 +74,18 @@ namespace ce
         T& m_ref;
         size_t& m_hash;
         size_t m_owned_hash = 0;
+    };
+
+    template <class T, class E = void>
+    struct ReturnSelector
+    {
+        using type = HashedOutput<T>;
+    };
+
+    template <class T>
+    struct ReturnSelector<T, typename std::enable_if<std::is_base_of<HashedBase, T>::value>::type>
+    {
+        using type = HashedOutput<T>;
     };
 
     template <typename T>

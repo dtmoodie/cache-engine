@@ -29,7 +29,11 @@ namespace ce
     template <class T>
     std::shared_ptr<T> deepCopy(std::shared_ptr<T> data)
     {
-        return std::make_shared<T>(*data);
+        if (data)
+        {
+            return std::make_shared<T>(*data);
+        }
+        return {};
     }
 
     template <class T>
