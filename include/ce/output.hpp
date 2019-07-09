@@ -85,8 +85,12 @@ namespace ce
     template <class T>
     struct ReturnSelector<T, typename std::enable_if<std::is_base_of<HashedBase, T>::value>::type>
     {
-        using type = HashedOutput<T>;
+        using type = T;
     };
+
+
+    template<class T>
+    using ReturnSelect = typename ReturnSelector<T>::type;
 
     template <typename T>
     std::ostream& operator<<(std::ostream& os, const HashedOutput<T>& value)

@@ -11,28 +11,25 @@
 namespace ce
 {
     template <class... FArgs, class... Args>
-    typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
+    typename std::enable_if<OutputPack<ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
     exec(void (*func)(FArgs...), Args&&... args)
-    {
-        auto eng = ICacheEngine::instance();
-        if (eng)
-        {
-            eng->exec(func, std::forward<Args>(args)...);
-        }
-        else
-        {
-            return func(ce::get(std::forward<Args>(args))...);
-        }
-    }
-
-    template <class R, class... FArgs, class... Args>
-    HashedOutput<R> exec(R (*func)(FArgs...), Args&&... args)
     {
         auto eng = ICacheEngine::instance();
         if (eng)
         {
             return eng->exec(func, std::forward<Args>(args)...);
         }
-        return HashedOutput<R>(func(ce::get(std::forward<Args>(args))...), 0);
+        return func(ce::get(std::forward<Args>(args))...);
+    }
+
+    template <class R, class... FArgs, class... Args>
+    ReturnSelect<R> exec(R (*func)(FArgs...), Args&&... args)
+    {
+        auto eng = ICacheEngine::instance();
+        if (eng)
+        {
+            return eng->exec(func, std::forward<Args>(args)...);
+        }
+        return func(ce::get(std::forward<Args>(args))...);
     }
 }

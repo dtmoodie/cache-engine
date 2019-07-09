@@ -92,11 +92,11 @@ int main()
     foo(std::move(test));
     foo(std::move(testvec));
     std::cout << "Testing OutputPack detection\n";
-    std::cout << OutputPack<void, int>::OUTPUT_COUNT << " == 0\n";
-    std::cout << OutputPack<void, int, int>::OUTPUT_COUNT << " == 0\n";
-    std::cout << OutputPack<void, HashedInput<int>, HashedInput<int>>::OUTPUT_COUNT << " == 0\n";
-    std::cout << OutputPack<void, HashedOutput<int>>::OUTPUT_COUNT << " == 1\n";
-    std::cout << OutputPack<void, HashedOutput<int>, HashedOutput<int>>::OUTPUT_COUNT << " == 2\n";
+    std::cout << OutputPack<int>::OUTPUT_COUNT << " == 0\n";
+    std::cout << OutputPack<int, int>::OUTPUT_COUNT << " == 0\n";
+    std::cout << OutputPack<HashedInput<int>, HashedInput<int>>::OUTPUT_COUNT << " == 0\n";
+    std::cout << OutputPack<HashedOutput<int>>::OUTPUT_COUNT << " == 1\n";
+    std::cout << OutputPack<HashedOutput<int>, HashedOutput<int>>::OUTPUT_COUNT << " == 2\n";
 
     // static_assert(!ce::function_traits::is_const(&bar::member), "member is non const");
     // static_assert(ce::function_traits::is_const(&bar::member2), "member is const");

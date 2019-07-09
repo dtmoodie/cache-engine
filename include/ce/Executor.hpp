@@ -48,11 +48,11 @@ namespace ce
         ExecutionToken(size_t fhash, void (T::*func)(FArgs...));
 
         template <class T2, class... Args>
-        typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
+        typename std::enable_if<OutputPack<ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
         operator()(T2& object, Args&&... args);
 
         template <class T2, class... Args>
-        typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
+        typename std::enable_if<OutputPack<ct::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
         operator()(T2& object, Args&&... args);
 
         void (T::*m_func)(FArgs...);
@@ -77,11 +77,11 @@ namespace ce
         ConstExecutionToken(size_t fhash, void (T::*func)(FArgs...) const);
 
         template <class T2, class... Args>
-        typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
+        typename std::enable_if<OutputPack<ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
         operator()(const T2& object, Args&&... args);
 
         template <class T2, class... Args>
-        typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
+        typename std::enable_if<OutputPack<ct::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
         operator()(const T2& object, Args&&... args);
 
         void (T::*m_func)(FArgs...) const;
@@ -208,8 +208,8 @@ namespace ce
         auto eng = ICacheEngine::instance();
         if (eng)
         {
-            using PackType = OutputPack<void, HashedOutput<R>, ct::remove_reference_t<Args>...>;
-            using TupleType = typename PackType::types::tuple_type;
+            using PackType = OutputPack<HashedOutput<R>, ct::remove_reference_t<Args>...>;
+            using TupleType = typename PackType::result_storage_types::tuple_type;
             const auto arg_hash = generateHash(obj_hash, std::forward<Args>(args)...);
             const size_t combined_hash = generateHash(m_fhash, arg_hash);
             std::shared_ptr<IResult> result = eng->getCachedResult(m_fhash, arg_hash);
@@ -222,7 +222,7 @@ namespace ce
 #ifdef CE_DEBUG_CACHE_USAGE
                     std::cout << "Found result in cache" << std::endl;
 #endif
-                    PackType::setOutputs(combined_hash, tresult->values, ret, args...);
+                    PackType::getOutputs(combined_hash, tresult->values, ret, args...);
                     return ret;
                 }
             }
@@ -265,11 +265,11 @@ namespace ce
 
     template <class T, class... FArgs>
     template <class T2, class... Args>
-    typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
+    typename std::enable_if<OutputPack<ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
     ExecutionToken<T, void, FArgs...>::operator()(T2& object, Args&&... args)
     {
-        using PackType = OutputPack<void, ct::remove_reference_t<Args>...>;
-        using TupleType = typename PackType::types::tuple_type;
+        using PackType = OutputPack<ct::remove_reference_t<Args>...>;
+        using TupleType = typename PackType::result_storage_types::tuple_type;
 
         T& obj = getObjectRef(object);
         size_t& obj_hash = getObjectHash(object);
@@ -296,7 +296,7 @@ namespace ce
                         std::cout << "Found result in cache" << std::endl;
                     }
                     eng->setCacheWasUsed(true);
-                    PackType::setOutputs(combined_hash, tresult->values, args...);
+                    PackType::getOutputs(combined_hash, tresult->values, args...);
                     return;
                 }
             }
@@ -315,7 +315,7 @@ namespace ce
 
     template <class T, class... FArgs>
     template <class T2, class... Args>
-    typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
+    typename std::enable_if<OutputPack<ct::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
     ExecutionToken<T, void, FArgs...>::operator()(T2& object, Args&&... args)
     {
         T& obj = getObjectRef(object);
@@ -359,7 +359,7 @@ namespace ce
 
     template <class T, class... FArgs>
     template <class T2, class... Args>
-    typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
+    typename std::enable_if<OutputPack<ct::remove_reference_t<Args>...>::OUTPUT_COUNT != 0>::type
     ConstExecutionToken<T, void, FArgs...>::operator()(const T2& object, Args&&... args)
     {
         const T& obj = getObjectRef(object);
@@ -376,7 +376,7 @@ namespace ce
 
     template <class T, class... FArgs>
     template <class T2, class... Args>
-    typename std::enable_if<OutputPack<void, ct::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
+    typename std::enable_if<OutputPack<ct::remove_reference_t<Args>...>::OUTPUT_COUNT == 0>::type
     ConstExecutionToken<T, void, FArgs...>::operator()(const T2& object, Args&&... args)
     {
         const T& obj = getObjectRef(object);

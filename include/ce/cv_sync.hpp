@@ -41,31 +41,29 @@ namespace ce
         std::list<cv::cuda::Event> m_pool;
     };
 
-    template <>
-    struct OutputPack<void, cv::cuda::Stream>
-    {
-        enum
-        {
-            OUTPUT_COUNT = 1
-        };
-        using types = ct::VariadicTypedef<CvEventPool::EventPtr>;
 
-        template <class TupleType>
-        static void setOutputs(size_t /*hash*/, TupleType& result, cv::cuda::Stream& stream)
+    template<>
+    struct OutputParameterHandler<cv::cuda::Stream, void, 9>
+    {
+        static constexpr const bool IS_OUTPUT = true;
+        using result_storage_type = ct::VariadicTypedef<CvEventPool::EventPtr>;
+
+        template<size_t IDX, class TupleType, class ... Args>
+        static void getOutput(size_t, TupleType& result, cv::cuda::Stream& stream, Args&& ...)
         {
-            CvEventPool::EventPtr& ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
+            CvEventPool::EventPtr& ev = std::get<IDX>(result);
             if (*(ev.m_stream) != stream)
             {
                 stream.waitEvent(*ev);
             }
         }
 
-        template <class TupleType>
-        static void saveOutputs(size_t /*hash*/, TupleType& result, cv::cuda::Stream& stream)
+        template<size_t IDX, class TupleType, class ... Args>
+        static void saveOutput(size_t, TupleType& result, cv::cuda::Stream& stream, Args&& ...)
         {
             if (stream)
             {
-                CvEventPool::EventPtr& ev = std::get<std::tuple_size<TupleType>::value - 1>(result);
+                CvEventPool::EventPtr& ev = std::get<IDX>(result);
                 ev.m_stream.reset(new cv::cuda::Stream(stream));
                 ev->record(stream);
             }

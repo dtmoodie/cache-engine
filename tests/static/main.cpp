@@ -11,6 +11,7 @@
 
 #include <ce/execute.hpp>
 #include <ct/StringView.hpp>
+#include <ct/static_asserts.hpp>
 
 #include <cmath>
 #include <math.h>
@@ -77,7 +78,7 @@ void format(char* buf, int val, size_t size)
 
 void format(char* buf, long val, size_t size)
 {
-    snprintf(buf, size, "%Ld", val);
+    snprintf(buf, size, "%d", val);
     bool null_found = false;
     for (size_t i = 0; i < size; ++i)
     {
@@ -151,6 +152,19 @@ const char* format(const char* fmt, FormatArgs&&... args)
 
 #define fmt(spec, ...) format<ct::formatStringSize(spec)>(spec, __VA_ARGS__)
 
+
+struct EmbeddedHash: public ce::HashedBase
+{
+    int val;
+};
+
+EmbeddedHash create(int x, int y)
+{
+    EmbeddedHash out;
+    out.val = x * y;
+    return out;
+}
+
 BOOST_AUTO_TEST_CASE(test_foo1)
 {
 
@@ -193,6 +207,25 @@ BOOST_AUTO_TEST_CASE(test_foo3)
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
 
+BOOST_AUTO_TEST_CASE(embedded_hash)
+{
+    auto eng = ce::ICacheEngine::instance();
+    auto ret = eng->exec(&create, 4, 5);
+    ct::StaticEqualTypes<decltype(ret), EmbeddedHash>{};
+    BOOST_REQUIRE_NE(ret.hash(), 0);
+    BOOST_REQUIRE_EQUAL(ret.val, 20);
+
+    const auto hash = ret.hash();
+    ret = eng->exec(&create, 4, 5);
+    BOOST_REQUIRE_EQUAL(ret.hash(), hash);
+    BOOST_REQUIRE_EQUAL(eng->wasCacheUsedLast(), true);
+    BOOST_REQUIRE_EQUAL(ret.val, 20);
+    ret = eng->exec(&create, 5, 5);
+    BOOST_REQUIRE_EQUAL(eng->wasCacheUsedLast(), false);
+    BOOST_REQUIRE_NE(ret.hash(), hash);
+    BOOST_REQUIRE_EQUAL(ret.val, 25);
+}
+
 BOOST_AUTO_TEST_CASE(test_foo4)
 {
     double result1, result2 = 0.0;
@@ -224,6 +257,8 @@ BOOST_AUTO_TEST_CASE(test_foo4)
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
+
+
 
 BOOST_AUTO_TEST_CASE(test_chain)
 {
