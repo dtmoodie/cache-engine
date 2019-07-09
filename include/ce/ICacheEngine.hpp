@@ -219,10 +219,9 @@ namespace ce
 
         // This is the case where this is a const function with a return
         template <class T, class U, class R, class... FARGS, class... ARGS>
-        ReturnSelect<R>
-        exec(size_t arg_hash, R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
+        ReturnSelect<R> exec(size_t arg_hash, R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
         {
-            using PackType = OutputPack<HashedOutput<R>, ct::remove_reference_t<ARGS>...>;
+            using PackType = OutputPack<ReturnSelect<R>, ct::remove_reference_t<ARGS>...>;
             using TupleType = typename PackType::result_storage_types::tuple_type;
 
             const auto& obj_ref = getObjectRef(obj);
@@ -246,7 +245,7 @@ namespace ce
             }
             setCacheWasUsed(false);
             TupleType results;
-            typename HashedOutput<R>::type out((obj_ref.*func)(ce::get(std::forward<ARGS>(args))...), combined_hash);
+            ReturnSelect<R> out = (obj_ref.*func)(ce::get(std::forward<ARGS>(args))...);
             PackType::saveOutputs(combined_hash, results, out, args...);
             result.reset(new TResult<TupleType>(std::move(results)));
             pushCachedResult(result, fhash, arg_hash);

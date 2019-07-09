@@ -76,20 +76,24 @@ namespace ce
         size_t m_owned_hash = 0;
     };
 
-    template <class T, class E = void>
-    struct ReturnSelector
+    template <class T, class E = void, int P = 10>
+    struct ReturnSelector : ReturnSelector<T, E, P - 1>
+    {
+    };
+
+    template <class T>
+    struct ReturnSelector<T, void, 0>
     {
         using type = HashedOutput<T>;
     };
 
     template <class T>
-    struct ReturnSelector<T, typename std::enable_if<std::is_base_of<HashedBase, T>::value>::type>
+    struct ReturnSelector<T, typename std::enable_if<std::is_base_of<HashedBase, T>::value>::type, 9>
     {
         using type = T;
     };
 
-
-    template<class T>
+    template <class T>
     using ReturnSelect = typename ReturnSelector<T>::type;
 
     template <typename T>
