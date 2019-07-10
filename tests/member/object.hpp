@@ -57,9 +57,8 @@ struct TestOutputObject
     int data;
 };
 
-struct TestHashedOutputObject : public TestOutputObject
+struct TestHashedOutputObject : public TestOutputObject, ce::HashedBase
 {
-    size_t hash = 0;
 };
 
 struct MutateOutputObject
@@ -114,10 +113,6 @@ namespace ce
         return obj.m_hash;
     }
 
-    HashedOutput<TestHashedOutputObject&> makeOutput(TestHashedOutputObject& ref)
-    {
-        return {ref, ref.hash};
-    }
     size_t& getObjectHash(MutateOutputObject& obj)
     {
         return obj.hash;

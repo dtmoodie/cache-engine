@@ -3,7 +3,7 @@
 #include <ce/hash.hpp>
 
 #include <iostream>
-
+#include <memory>
 namespace ce
 {
     struct HashedBase
@@ -17,17 +17,11 @@ namespace ce
     };
 
     template <class T>
-    struct HashedOutput
+    struct HashedOutput : public HashedBase
     {
         using type = HashedOutput<T>;
-
-        HashedOutput()
-        {
-        }
-
-        HashedOutput(T val, size_t hash = 0)
+        HashedOutput(T val = {})
             : m_ref(std::move(val))
-            , m_hash(hash)
         {
         }
 
@@ -35,30 +29,23 @@ namespace ce
         {
             return m_ref;
         }
+
         operator const T&() const
         {
             return m_ref;
         }
 
         T m_ref;
-        size_t m_hash = 0;
     };
 
     // This version is used for wrapping other objects
     template <class T>
-    struct HashedOutput<T&>
+    struct HashedOutput<T&> : public HashedBase
     {
         using type = HashedOutput<T&>;
 
         HashedOutput(T& ref)
             : m_ref(ref)
-            , m_hash(m_owned_hash)
-        {
-        }
-
-        HashedOutput(T& ref, size_t& hash)
-            : m_ref(ref)
-            , m_hash(hash)
         {
         }
 
@@ -72,8 +59,6 @@ namespace ce
         }
 
         T& m_ref;
-        size_t& m_hash;
-        size_t m_owned_hash = 0;
     };
 
     template <class T, class E = void, int P = 10>
@@ -87,10 +72,25 @@ namespace ce
         using type = HashedOutput<T>;
     };
 
+    template <>
+    struct ReturnSelector<void, void, 1>
+    {
+        using type = void;
+    };
+
     template <class T>
     struct ReturnSelector<T, typename std::enable_if<std::is_base_of<HashedBase, T>::value>::type, 9>
     {
         using type = T;
+    };
+
+    template <class T>
+    struct ReturnSelector<
+        std::shared_ptr<T>,
+        typename std::enable_if<std::is_base_of<HashedBase, typename std::decay<T>::type>::value>::type,
+        9>
+    {
+        using type = std::shared_ptr<T>;
     };
 
     template <class T>
@@ -99,7 +99,7 @@ namespace ce
     template <typename T>
     std::ostream& operator<<(std::ostream& os, const HashedOutput<T>& value)
     {
-        os << value.m_ref << ':' << value.m_hash;
+        os << value.m_ref << ':' << value.hash();
         return os;
     }
 
@@ -126,15 +126,6 @@ namespace ce
     {
         return data.m_ref;
     }
-
-    template <class T>
-    struct HashSelector<HashedOutput<T>, void, 9>
-    {
-        static size_t generateHash(const HashedOutput<T>& data)
-        {
-            return data.m_hash;
-        }
-    };
 
     template <class T>
     struct HashSelector<T, typename std::enable_if<std::is_base_of<ce::HashedBase, T>::value>::type, 9>

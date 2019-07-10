@@ -152,8 +152,7 @@ const char* format(const char* fmt, FormatArgs&&... args)
 
 #define fmt(spec, ...) format<ct::formatStringSize(spec)>(spec, __VA_ARGS__)
 
-
-struct EmbeddedHash: public ce::HashedBase
+struct EmbeddedHash : public ce::HashedBase
 {
     int val;
 };
@@ -240,25 +239,23 @@ BOOST_AUTO_TEST_CASE(test_foo4)
     foo4(5, 6, 7, result2);
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_NE(out1.m_hash, out2.m_hash);
+    BOOST_REQUIRE_NE(out1.hash(), out2.hash());
 
     // Get cached results
     auto out3 = ce::makeOutput(result1);
     ce::exec(foo4, 2, 3, 4, out3);
     foo4(2, 3, 4, result2);
-    BOOST_REQUIRE_EQUAL(out1.m_hash, out3.m_hash);
+    BOOST_REQUIRE_EQUAL(out1.hash(), out3.hash());
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 
     auto out4 = ce::makeOutput(result1);
     ce::exec(foo4, 5, 6, 7, out4);
     foo4(5, 6, 7, result2);
-    BOOST_REQUIRE_EQUAL(out2.m_hash, out4.m_hash);
+    BOOST_REQUIRE_EQUAL(out2.hash(), out4.hash());
     BOOST_REQUIRE_EQUAL(result1, result2);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
-
-
 
 BOOST_AUTO_TEST_CASE(test_chain)
 {
@@ -269,10 +266,10 @@ BOOST_AUTO_TEST_CASE(test_chain)
 
     auto result3 = ce::exec(foo2, 5, 10);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(result1.m_hash, result3.m_hash);
+    BOOST_REQUIRE_EQUAL(result1.hash(), result3.hash());
     auto result4 = ce::exec(foo3, ce::makeInput(result3), 4, 5);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(result2.m_hash, result4.m_hash);
+    BOOST_REQUIRE_EQUAL(result2.hash(), result4.hash());
 }
 
 BOOST_AUTO_TEST_CASE(test_multi_out)
@@ -283,8 +280,8 @@ BOOST_AUTO_TEST_CASE(test_multi_out)
     auto out2 = ce::makeOutput(val2);
     auto ret1 = ce::exec(foo5, 4, 5, out1, out2);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_NE(out1.m_hash, out2.m_hash);
-    BOOST_REQUIRE_NE(out1.m_hash, ret1.m_hash);
+    BOOST_REQUIRE_NE(out1.hash(), out2.hash());
+    BOOST_REQUIRE_NE(out1.hash(), ret1.hash());
     BOOST_REQUIRE_EQUAL(out1.m_ref, 4 * 5);
     BOOST_REQUIRE_EQUAL(out2.m_ref, 4 + 5);
     BOOST_REQUIRE_EQUAL(ret1, out1.m_ref + out2.m_ref);
@@ -293,9 +290,9 @@ BOOST_AUTO_TEST_CASE(test_multi_out)
     auto out4 = ce::makeOutput(val2);
     auto ret2 = ce::exec(foo5, 4, 5, out3, out4);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(out3.m_hash, out1.m_hash);
-    BOOST_REQUIRE_EQUAL(out4.m_hash, out2.m_hash);
-    BOOST_REQUIRE_EQUAL(ret1.m_hash, ret2.m_hash);
+    BOOST_REQUIRE_EQUAL(out3.hash(), out1.hash());
+    BOOST_REQUIRE_EQUAL(out4.hash(), out2.hash());
+    BOOST_REQUIRE_EQUAL(ret1.hash(), ret2.hash());
     BOOST_REQUIRE_EQUAL(out3.m_ref, 4 * 5);
     BOOST_REQUIRE_EQUAL(out4.m_ref, 4 + 5);
     BOOST_REQUIRE_EQUAL(ret2, out3.m_ref + out4.m_ref);
@@ -316,8 +313,8 @@ BOOST_AUTO_TEST_CASE(const_ref_input)
     auto out2 = ce::makeOutput(val);
     ce::exec(&foo7, input, out2);
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(out1.m_hash, out2.m_hash);
-    BOOST_REQUIRE_NE(out1.m_hash, 0);
+    BOOST_REQUIRE_EQUAL(out1.hash(), out2.hash());
+    BOOST_REQUIRE_NE(out1.hash(), 0);
 }
 
 void foo7Wrapper(const std::vector<int>& input, double& output)

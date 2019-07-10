@@ -19,13 +19,13 @@ namespace ce
     }
 
     template <class T>
-    struct HashedInput
+    struct HashedInput : HashedBase
     {
         template <class... Args>
         HashedInput(Args&&... args)
             : data(std::forward<Args>(args)...)
         {
-            hash = generateHash();
+            setHash(generateHash());
         }
 
         operator ct::remove_reference_t<T>&()
@@ -37,18 +37,17 @@ namespace ce
             return data;
         }
 
-        size_t hash;
         T data;
     };
 
     template <class T>
-    struct HashedInput<T&>
+    struct HashedInput<T&> : HashedBase
     {
 
         HashedInput(T& ref, size_t in_hash = generateHash())
             : data(ref)
-            , hash(in_hash)
         {
+            setHash(in_hash);
         }
 
         operator ct::remove_reference_t<T>&()
@@ -60,7 +59,6 @@ namespace ce
             return data;
         }
 
-        size_t hash;
         T& data;
     };
 
@@ -80,7 +78,7 @@ namespace ce
     HashedInput<ct::remove_reference_t<T>&> makeInput(HashedOutput<T>& output)
     {
         HashedInput<ct::remove_reference_t<T>&> ret(output.m_ref);
-        ret.hash = output.m_hash;
+        ret.setHash(output.hash());
         return ret;
     }
 
@@ -90,24 +88,6 @@ namespace ce
         HashedInput<T&> ret(output.m_ref);
         ret.hash = output.m_hash;
         return ret;
-    }
-
-    template <class T>
-    size_t generateHash(const HashedInput<T>& v)
-    {
-        return v.hash;
-    }
-
-    template <class T>
-    size_t generateHash(HashedInput<T>& v)
-    {
-        return v.hash;
-    }
-
-    template <class T>
-    size_t generateHash(HashedInput<T>&& v)
-    {
-        return v.hash;
     }
 
     template <class T>
@@ -167,20 +147,19 @@ namespace ce
         return data.data;
     }
 
-
-    template<class T>
+    template <class T>
     T& getObjectRef(EmptyInput<T&>& data)
     {
         return data.data;
     }
 
-    template<class T>
+    template <class T>
     const T& getObjectRef(const EmptyInput<T&>& data)
     {
         return data.data;
     }
 
-    template<class T>
+    template <class T>
     size_t getObjectHash(const EmptyInput<T>&)
     {
         return 0;

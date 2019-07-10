@@ -55,9 +55,16 @@ namespace ce
         m_was_used = val;
     }
 
-    std::shared_ptr<IResult> CacheEngine::getCachedResult(size_t fhash, size_t hash)
+    std::shared_ptr<IResult> CacheEngine::getCachedResult(size_t fhash, size_t hash) const
     {
-        return m_result_cache[combineHash(fhash, hash)];
+        auto itr = m_result_cache.find(combineHash(fhash, hash));
+        if (itr != m_result_cache.end())
+        {
+            m_was_used = true;
+            return itr->second;
+        }
+        m_was_used = false;
+        return {};
     }
 
     void CacheEngine::pushCachedResult(std::shared_ptr<IResult> result, size_t fhash, size_t arg_hash)
