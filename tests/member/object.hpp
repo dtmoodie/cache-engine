@@ -5,8 +5,8 @@ namespace ce
 {
     const size_t& getObjectHash(const MutateOutputObject& obj);
     size_t& getObjectHash(MutateOutputObject& obj);
-    MutateOutputObject& getObjectRef(MutateOutputObject& obj);
-    const MutateOutputObject& getObjectRef(const MutateOutputObject& obj);
+    MutateOutputObject& get(MutateOutputObject& obj);
+    const MutateOutputObject& get(const MutateOutputObject& obj);
 }
 
 #include <ce/Executor.hpp>
@@ -79,13 +79,6 @@ struct MutateOutputObject
     int member;
 };
 
-struct MemoizedObject
-{
-    int foo()
-    {
-    }
-};
-
 struct TestHashedObject : public TestObject
 {
     size_t m_hash = ce::classHash<TestHashedObject>();
@@ -93,12 +86,12 @@ struct TestHashedObject : public TestObject
 
 namespace ce
 {
-    TestHashedObject& getObjectRef(TestHashedObject& obj)
+    TestHashedObject& get(TestHashedObject& obj)
     {
         return obj;
     }
 
-    const TestHashedObject& getObjectRef(const TestHashedObject& obj)
+    const TestHashedObject& get(const TestHashedObject& obj)
     {
         return obj;
     }
@@ -121,11 +114,11 @@ namespace ce
     {
         return obj.hash;
     }
-    MutateOutputObject& getObjectRef(MutateOutputObject& obj)
+    MutateOutputObject& get(MutateOutputObject& obj)
     {
         return obj;
     }
-    const MutateOutputObject& getObjectRef(const MutateOutputObject& obj)
+    const MutateOutputObject& get(const MutateOutputObject& obj)
     {
         return obj;
     }

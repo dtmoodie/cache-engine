@@ -16,49 +16,53 @@ namespace ce
         size_t m_hash = 0;
     };
 
-    template <class T>
-    struct HashedOutput : public HashedBase
+    void setHash(size_t, HashedBase&);
+
+    struct HashedOutputBase : HashedBase
     {
-        using type = HashedOutput<T>;
+    };
+
+    template <class T>
+    struct HashedOutput : HashedOutputBase
+    {
+        using type = T;
         HashedOutput(T val = {})
-            : m_ref(std::move(val))
+            : data(std::move(val))
         {
         }
 
         operator T&()
         {
-            return m_ref;
+            return data;
         }
-
         operator const T&() const
         {
-            return m_ref;
+            return data;
         }
 
-        T m_ref;
+        T data;
     };
 
     // This version is used for wrapping other objects
     template <class T>
-    struct HashedOutput<T&> : public HashedBase
+    struct HashedOutput<T&> : HashedOutputBase
     {
-        using type = HashedOutput<T&>;
-
+        using type = T;
         HashedOutput(T& ref)
-            : m_ref(ref)
+            : data(ref)
         {
         }
 
         operator T&()
         {
-            return m_ref;
+            return data;
         }
         operator const T&() const
         {
-            return m_ref;
+            return data;
         }
 
-        T& m_ref;
+        T& data;
     };
 
     template <class T, class E = void, int P = 10>
@@ -99,7 +103,7 @@ namespace ce
     template <typename T>
     std::ostream& operator<<(std::ostream& os, const HashedOutput<T>& value)
     {
-        os << value.m_ref << ':' << value.hash();
+        os << value.data << ':' << value.hash();
         return os;
     }
 
@@ -118,13 +122,19 @@ namespace ce
     template <class T>
     T& get(HashedOutput<T>& data)
     {
-        return data.m_ref;
+        return data.data;
     }
 
     template <class T>
     T& get(HashedOutput<T&> data)
     {
-        return data.m_ref;
+        return data.data;
+    }
+
+    template <class T>
+    T* get(HashedOutput<T*> data)
+    {
+        return data.data;
     }
 
     template <class T>

@@ -154,6 +154,7 @@ const char* format(const char* fmt, FormatArgs&&... args)
 
 struct EmbeddedHash : public ce::HashedBase
 {
+    using type = EmbeddedHash;
     int val;
 };
 
@@ -164,9 +165,52 @@ EmbeddedHash create(int x, int y)
     return out;
 }
 
+std::shared_ptr<const EmbeddedHash> createShared(int x, int y)
+{
+    auto out = std::make_shared<EmbeddedHash>();
+    out->val = x * y;
+    return out;
+}
+
+int scaleData(float& data, float mul, float bias)
+{
+    data = data * mul + bias;
+    return 1;
+}
+
+static long GMULL = 0x9E3779B97F4A7C15L;
+static long GDIVL = 0xF1DE83E19937733DL;
+static long GADDL = 0x0123456789ABCDEFL;
+uint64_t golden64fwd(uint64_t key)
+{
+    key *= GMULL;
+    key += GADDL;
+    return key;
+}
+
+uint64_t golden64rev(uint64_t key)
+{
+    key -= GADDL;
+    key *= GDIVL;
+    return key;
+}
+
+uint64_t combine(uint64_t v0, uint64_t v1)
+{
+    return v0 + v1;
+}
+
+uint64_t decouple(uint64_t v0, uint64_t v1)
+{
+    return v0 - v1;
+}
+
 BOOST_AUTO_TEST_CASE(test_foo1)
 {
+    auto val = golden64fwd(ce::generateHash(&foo1));
+    auto rev = golden64rev(val);
 
+    BOOST_REQUIRE_EQUAL(rev, ce::generateHash(&foo1));
     // auto spec_size = ct::specifierSize<2>("asdf {3} {4}");
     // fmt("asdf {3} {4}", 4, 5);
     BOOST_REQUIRE_EQUAL(ce::exec(foo1, 10), foo1(10));
@@ -206,6 +250,20 @@ BOOST_AUTO_TEST_CASE(test_foo3)
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
 
+BOOST_AUTO_TEST_CASE(scale_vector)
+{
+    float data = 10;
+    auto val = ce::exec(&scaleData, ce::makeOutput(data), 2.0, 3.0);
+    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    BOOST_REQUIRE_EQUAL(val, 1);
+    BOOST_REQUIRE_EQUAL(data, 10 * 2 + 3);
+    data = 10;
+    val = ce::exec(&scaleData, ce::makeOutput(data), 2.0, 3.0);
+    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    BOOST_REQUIRE_EQUAL(val, 1);
+    BOOST_REQUIRE_EQUAL(data, 10 * 2 + 3);
+}
+
 BOOST_AUTO_TEST_CASE(embedded_hash)
 {
     auto eng = ce::ICacheEngine::instance();
@@ -223,6 +281,11 @@ BOOST_AUTO_TEST_CASE(embedded_hash)
     BOOST_REQUIRE_EQUAL(eng->wasCacheUsedLast(), false);
     BOOST_REQUIRE_NE(ret.hash(), hash);
     BOOST_REQUIRE_EQUAL(ret.val, 25);
+
+    auto shared_ret = eng->exec(&createShared, 4, 5);
+    BOOST_REQUIRE_EQUAL(eng->wasCacheUsedLast(), false);
+    shared_ret = eng->exec(&createShared, 4, 5);
+    BOOST_REQUIRE_EQUAL(eng->wasCacheUsedLast(), true);
 }
 
 BOOST_AUTO_TEST_CASE(test_foo4)
@@ -282,9 +345,9 @@ BOOST_AUTO_TEST_CASE(test_multi_out)
     BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
     BOOST_REQUIRE_NE(out1.hash(), out2.hash());
     BOOST_REQUIRE_NE(out1.hash(), ret1.hash());
-    BOOST_REQUIRE_EQUAL(out1.m_ref, 4 * 5);
-    BOOST_REQUIRE_EQUAL(out2.m_ref, 4 + 5);
-    BOOST_REQUIRE_EQUAL(ret1, out1.m_ref + out2.m_ref);
+    BOOST_REQUIRE_EQUAL(out1.data, 4 * 5);
+    BOOST_REQUIRE_EQUAL(out2.data, 4 + 5);
+    BOOST_REQUIRE_EQUAL(ret1, out1.data + out2.data);
 
     auto out3 = ce::makeOutput(val1);
     auto out4 = ce::makeOutput(val2);
@@ -293,9 +356,9 @@ BOOST_AUTO_TEST_CASE(test_multi_out)
     BOOST_REQUIRE_EQUAL(out3.hash(), out1.hash());
     BOOST_REQUIRE_EQUAL(out4.hash(), out2.hash());
     BOOST_REQUIRE_EQUAL(ret1.hash(), ret2.hash());
-    BOOST_REQUIRE_EQUAL(out3.m_ref, 4 * 5);
-    BOOST_REQUIRE_EQUAL(out4.m_ref, 4 + 5);
-    BOOST_REQUIRE_EQUAL(ret2, out3.m_ref + out4.m_ref);
+    BOOST_REQUIRE_EQUAL(out3.data, 4 * 5);
+    BOOST_REQUIRE_EQUAL(out4.data, 4 + 5);
+    BOOST_REQUIRE_EQUAL(ret2, out3.data + out4.data);
     int in = 5;
     int out = 0;
 

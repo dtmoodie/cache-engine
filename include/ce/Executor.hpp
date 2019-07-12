@@ -45,6 +45,10 @@ namespace ce
     struct HashWrapper<T&> : public HashedBase
     {
         using value_type = T;
+        HashWrapper(T& ref)
+            : obj(ref)
+        {
+        }
         T* operator->()
         {
             return obj;
@@ -107,37 +111,37 @@ namespace ce
     };
 
     template <class T>
-    T& getObjectRef(HashWrapper<T>& v)
+    T& get(HashWrapper<T>& v)
     {
         return v.obj;
     }
 
     template <class T>
-    const T& getObjectRef(const HashWrapper<T>& v)
+    const T& get(const HashWrapper<T>& v)
     {
         return v.obj;
     }
 
     template <class T>
-    T& getObjectRef(HashWrapper<T*>& v)
+    T& get(HashWrapper<T*>& v)
     {
         return *v.obj;
     }
 
     template <class T>
-    const T& getObjectRef(const HashWrapper<T*>& v)
+    const T& get(const HashWrapper<T*>& v)
     {
         return *v.obj;
     }
 
     template <class T>
-    T& getObjectRef(HashWrapper<T&>& v)
+    T& get(HashWrapper<T&>& v)
     {
         return v.obj;
     }
 
     template <class T>
-    const T& getObjectRef(const HashWrapper<T&>& v)
+    const T& get(const HashWrapper<T&>& v)
     {
         return v.obj;
     }
@@ -151,7 +155,7 @@ namespace ce
     template <class T>
     typename std::enable_if<!std::is_base_of<HashedBase, T>::value, HashWrapper<T&>>::type wrapHash(T& r)
     {
-        return r;
+        return HashWrapper<T&>(r);
     }
 
     template <class T>

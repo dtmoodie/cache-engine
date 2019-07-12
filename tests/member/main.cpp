@@ -35,8 +35,9 @@ BOOST_AUTO_TEST_CASE(const_member_accessor)
     ret1 = ce::exec(&TestObject::get, hashed2);
     BOOST_REQUIRE(eng->wasCacheUsedLast() == true);
     BOOST_REQUIRE_EQUAL(ret1, 0);
-
+    auto hash = hashed1.hash();
     eng->exec(&TestObject::set, hashed1, 5);
+    BOOST_REQUIRE_NE(hash, hashed1.hash());
     BOOST_REQUIRE_EQUAL(hashed1.obj.member1, 5);
     ret1 = eng->exec(&TestObject::get, hashed1);
     BOOST_REQUIRE_EQUAL(ret1, 5);

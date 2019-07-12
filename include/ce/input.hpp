@@ -18,8 +18,12 @@ namespace ce
         return std::forward<T>(data);
     }
 
+    struct HashedInputBase : HashedBase
+    {
+    };
+
     template <class T>
-    struct HashedInput : HashedBase
+    struct HashedInput : HashedInputBase
     {
         template <class... Args>
         HashedInput(Args&&... args)
@@ -41,7 +45,7 @@ namespace ce
     };
 
     template <class T>
-    struct HashedInput<T&> : HashedBase
+    struct HashedInput<T&> : HashedInputBase
     {
 
         HashedInput(T& ref, size_t in_hash = generateHash())
@@ -77,7 +81,7 @@ namespace ce
     template <class T>
     HashedInput<ct::remove_reference_t<T>&> makeInput(HashedOutput<T>& output)
     {
-        HashedInput<ct::remove_reference_t<T>&> ret(output.m_ref);
+        HashedInput<ct::remove_reference_t<T>&> ret(output.data);
         ret.setHash(output.hash());
         return ret;
     }
@@ -148,13 +152,13 @@ namespace ce
     }
 
     template <class T>
-    T& getObjectRef(EmptyInput<T&>& data)
+    T& get(EmptyInput<T&>& data)
     {
         return data.data;
     }
 
     template <class T>
-    const T& getObjectRef(const EmptyInput<T&>& data)
+    const T& get(const EmptyInput<T&>& data)
     {
         return data.data;
     }

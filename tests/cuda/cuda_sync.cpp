@@ -20,15 +20,8 @@ int main(int argc, char** argv)
     auto d_vec = ce::makeInput<thrust::device_vector<float>>(h_vec);
 
     std::shared_ptr<thrust::device_vector<float>> d_out;
-    auto exec = ce::makeExecutor<async_processor>();
+    auto exec = ce::wrapHash(async_processor());
     cudaStream_t stream = nullptr;
     cudaStreamCreate(&stream);
-
-    std::cout << ce::countOutputs(d_vec, ce::makeOutput(d_out), stream) << std::endl;
-// exec.EXEC_MEMBER (&async_processor::apply)(d_vec, ce::makeOutput(d_out), stream);
-
-#ifdef HAVE_OPENCV
-
-#endif
     return 0;
 }

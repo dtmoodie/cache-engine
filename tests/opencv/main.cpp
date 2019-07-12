@@ -1,4 +1,3 @@
-#define CE_DEBUG_CACHE_USAGE
 #include <ce/CacheEngine.hpp>
 #include <ce/Executor.hpp>
 #include <ce/execute.hpp>
@@ -17,10 +16,16 @@
 
 namespace ce
 {
-    size_t combineHash(size_t seed, const cv::_InputOutputArray& v)
+    template <class T>
+    T& get(cv::Ptr<T>& ptr)
     {
-        (void)v;
-        return seed;
+        return *ptr;
+    }
+
+    template <class T>
+    T& get(HashWrapper<cv::Ptr<T>&>& ptr)
+    {
+        return *ptr.obj;
     }
 }
 
@@ -32,7 +37,8 @@ int main(int argc, char** argv)
         cv::Mat h_img = cv::imread(argv[1]);
         cv::cuda::Stream stream1, stream2;
         auto kp = cv::cuda::createGoodFeaturesToTrackDetector(CV_32F);
-        auto executor = ce::makeExecutor(*kp);
+        auto executor = ce::wrapHash(kp);
+        // auto executor = ce::makeExecutor(*kp);
         cv::cuda::GpuMat output_mat;
         cv::cuda::GpuMat output_mat2;
         cv::cuda::GpuMat float_mat;
@@ -54,19 +60,31 @@ int main(int argc, char** argv)
                 std::cout << "Unable to retrieve result of cv::cuda::cvtColor out of result cache" << std::endl;
                 return 1;
             }
+            cv::_OutputArray out(float_mat);
+            auto float_output = ce::makeOutput(out);
+            ce::exec(static_cast<void (cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&) const>(
+                         &cv::cuda::GpuMat::convertTo),
+                     output,
+                     float_output,
+                     CV_32F,
+                     1.0,
+                     stream2);
 
-            auto mat_executor = ce::makeExecutor(output);
+            cv::_OutputArray corners_out(corners);
+            ce::exec(&cv::cuda::CornersDetector::detect,
+                     executor,
+                     ce::makeInput(float_output),
+                     ce::makeOutput(corners_out),
+                     ce::makeEmptyInput(cv::noArray()),
+                     stream2);
 
-            auto float_output = ce::makeOutput(float_mat);
-            mat_executor.exec(
-                static_cast<void (cv::cuda::GpuMat::*)(cv::OutputArray, int, double, cv::cuda::Stream&) const>(
-                    &cv::cuda::GpuMat::convertTo))(float_output, CV_32F, 1.0, stream2);
+            ce::exec(&cv::cuda::CornersDetector::detect,
+                     executor,
+                     ce::makeInput(float_output),
+                     ce::makeOutput(corners_out),
+                     ce::makeEmptyInput(cv::noArray()),
+                     stream1);
 
-            executor.exec (&cv::cuda::CornersDetector::detect)(
-                ce::makeInput(float_output), ce::makeOutput(corners), ce::makeEmptyInput(cv::noArray()), stream2);
-
-            executor.exec (&cv::cuda::CornersDetector::detect)(
-                ce::makeInput(float_output), ce::makeOutput(corners), ce::makeEmptyInput(cv::noArray()), stream1);
             if (ce::ICacheEngine::instance()->wasCacheUsedLast())
             {
                 std::cout << "Successfully pulled corner detection results out of cache" << std::endl;
