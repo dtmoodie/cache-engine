@@ -1,0 +1,131 @@
+#ifndef CT_SHARED_PTR_HPP
+#define CT_SHARED_PTR_HPP
+
+#include <memory>
+
+namespace ce
+{
+    template <class T>
+    struct shared_ptr;
+
+    template <class T>
+    struct shared_ptr
+    {
+        shared_ptr(std::shared_ptr<T> data)
+            : m_data(std::move(data))
+        {
+        }
+
+        shared_ptr(shared_ptr<const T> data)
+            : m_data(std::move(data.m_data))
+            , m_is_const(true)
+        {
+        }
+
+        const T* get() const
+        {
+            return m_data.get();
+        }
+
+        const T* operator->() const
+        {
+            return get();
+        }
+
+        const T& operator*() const
+        {
+            return *m_data;
+        }
+
+        std::shared_ptr<const T> data() const
+        {
+            return m_data;
+        }
+
+        T* get()
+        {
+            maybeCopy();
+            return m_data.get();
+        }
+
+        T* operator->()
+        {
+            return get();
+        }
+
+        T& operator*()
+        {
+            maybeCopy();
+            return *m_data;
+        }
+
+        std::shared_ptr<T> data()
+        {
+            return m_data;
+        }
+
+        operator bool() const
+        {
+            return m_data;
+        }
+
+      private:
+        friend shared_ptr<const T>;
+        void maybeCopy()
+        {
+            if (m_is_const && m_data)
+            {
+                m_data = std::make_shared<T>(*m_data);
+                m_is_const = false;
+            }
+        }
+
+        std::shared_ptr<T> m_data;
+        bool m_is_const = false;
+    };
+
+    template <class T>
+    struct shared_ptr<const T>
+    {
+        shared_ptr(const shared_ptr<T>& data)
+            : m_data(data.m_data)
+        {
+        }
+
+        shared_ptr(const shared_ptr<const T>& data) = default;
+        shared_ptr(std::shared_ptr<T> data)
+            : m_data(data)
+        {
+        }
+
+        const T* get() const
+        {
+            return m_data.get();
+        }
+
+        const T* operator->() const
+        {
+            return get();
+        }
+
+        const T& operator*() const
+        {
+            return *get();
+        }
+
+        std::shared_ptr<const T> data() const
+        {
+            return m_data;
+        }
+        operator bool() const
+        {
+            return m_data;
+        }
+
+      private:
+        friend shared_ptr<T>;
+        std::shared_ptr<T> m_data;
+    };
+}
+
+#endif // CT_SHARED_PTR_HPP

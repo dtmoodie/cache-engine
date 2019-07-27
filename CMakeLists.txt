@@ -75,6 +75,11 @@ if(Boost_UNIT_TEST_FRAMEWORK_FOUND)
     add_executable(test_ce_member_function ${src})
     target_link_libraries(test_ce_member_function ce ${Boost_LIBRARIES})
     target_include_directories(test_ce_member_function PUBLIC $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>)
+
+    file(GLOB_RECURSE src "tests/shared_ptr/*.cpp")
+    add_executable(test_ce_shared_ptr ${src})
+    target_link_libraries(test_ce_shared_ptr ce ${Boost_LIBRARIES})
+    target_include_directories(test_ce_shared_ptr PUBLIC $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>)
 ENDIF()
 
 export(TARGETS ce
