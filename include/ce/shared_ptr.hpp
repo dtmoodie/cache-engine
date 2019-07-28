@@ -11,6 +11,7 @@ namespace ce
     template <class T>
     struct shared_ptr
     {
+        shared_ptr() = default;
         shared_ptr(std::shared_ptr<T> data)
             : m_data(std::move(data))
         {
@@ -20,6 +21,12 @@ namespace ce
             : m_data(std::move(data.m_data))
             , m_is_const(true)
         {
+        }
+
+        shared_ptr& operator=(std::shared_ptr<T> v)
+        {
+            m_data = std::move(v);
+            return *this;
         }
 
         const T* get() const
@@ -69,6 +76,12 @@ namespace ce
             return m_data;
         }
 
+        operator std::shared_ptr<T>() const
+        {
+            maybeCopy();
+            return m_data;
+        }
+
       private:
         friend shared_ptr<const T>;
         void maybeCopy()
@@ -87,6 +100,7 @@ namespace ce
     template <class T>
     struct shared_ptr<const T>
     {
+        shared_ptr() = default;
         shared_ptr(const shared_ptr<T>& data)
             : m_data(data.m_data)
         {
@@ -96,6 +110,19 @@ namespace ce
         shared_ptr(std::shared_ptr<T> data)
             : m_data(data)
         {
+        }
+
+        shared_ptr& operator=(std::shared_ptr<T> v)
+        {
+            m_data = std::move(v);
+            return *this;
+        }
+
+        shared_ptr& operator=(std::shared_ptr<const T> v)
+        {
+            // shh nothing to see here
+            m_data = std::shared_ptr<T>(const_cast<T*>(v.get()), [v](T*) {});
+            return *this;
         }
 
         const T* get() const
@@ -117,7 +144,22 @@ namespace ce
         {
             return m_data;
         }
+
         operator bool() const
+        {
+            return m_data;
+        }
+
+        operator std::shared_ptr<T>() const
+        {
+            if (m_data)
+            {
+                return std::make_shared<T>(*m_data);
+            }
+            return {};
+        }
+
+        operator std::shared_ptr<const T>() const
         {
             return m_data;
         }

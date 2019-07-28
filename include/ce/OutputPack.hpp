@@ -4,6 +4,7 @@
 #include <ce/VariadicTypedef.hpp>
 #include <ce/input.hpp>
 #include <ce/output.hpp>
+#include <ce/shared_ptr.hpp>
 #include <ct/hash.hpp>
 
 #include <memory>
@@ -168,7 +169,7 @@ namespace ce
                                   J>
     {
         static constexpr const bool IS_OUTPUT = true;
-        using result_storage_type = ct::VariadicTypedef<std::shared_ptr<decay_t<T>>>;
+        using result_storage_type = ct::VariadicTypedef<shared_ptr<const decay_t<T>>>;
 
         template <size_t IDX, class TupleType, class... Args>
         static void getOutput(size_t hash, const TupleType& result, std::shared_ptr<T>& out, Args&&...)
@@ -192,7 +193,7 @@ namespace ce
                                   0>
     {
         static constexpr const bool IS_OUTPUT = true;
-        using result_storage_type = ct::VariadicTypedef<std::shared_ptr<const T>>;
+        using result_storage_type = ct::VariadicTypedef<shared_ptr<const T>>;
 
         template <size_t IDX, class TupleType, class... Args>
         static void getOutput(size_t, const TupleType& result, std::shared_ptr<const T>& out, Args&&...)
