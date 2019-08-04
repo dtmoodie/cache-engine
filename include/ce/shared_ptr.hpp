@@ -12,6 +12,18 @@ namespace ce
     struct shared_ptr
     {
         shared_ptr() = default;
+
+        template <class... ARGS>
+        static shared_ptr create(ARGS&&... args)
+        {
+            return shared_ptr(std::make_shared<T>(std::forward<ARGS>(args)...));
+        }
+
+        template <class... ARGS>
+        shared_ptr(ARGS&&... args)
+            : m_data(std::make_shared<T>(std::forward<ARGS>(args)...))
+        {
+        }
         shared_ptr(std::shared_ptr<T> data)
             : m_data(std::move(data))
         {
@@ -73,7 +85,7 @@ namespace ce
 
         operator bool() const
         {
-            return m_data;
+            return m_data != nullptr;
         }
 
         operator std::shared_ptr<T>() const
@@ -101,6 +113,19 @@ namespace ce
     struct shared_ptr<const T>
     {
         shared_ptr() = default;
+
+        template <class... ARGS>
+        static shared_ptr create(ARGS&&... args)
+        {
+            return shared_ptr(std::make_shared<T>(std::forward<ARGS>(args)...));
+        }
+
+        template <class... ARGS>
+        shared_ptr(ARGS&&... args)
+            : m_data(std::make_shared<T>(std::forward<ARGS>(args)...))
+        {
+        }
+
         shared_ptr(const shared_ptr<T>& data)
             : m_data(data.m_data)
         {
@@ -147,7 +172,7 @@ namespace ce
 
         operator bool() const
         {
-            return m_data;
+            return m_data != nullptr;
         }
 
         operator std::shared_ptr<T>() const
