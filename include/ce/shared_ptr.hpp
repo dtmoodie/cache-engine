@@ -19,11 +19,7 @@ namespace ce
             return shared_ptr(std::make_shared<T>(std::forward<ARGS>(args)...));
         }
 
-        template <class... ARGS>
-        shared_ptr(ARGS&&... args)
-            : m_data(std::make_shared<T>(std::forward<ARGS>(args)...))
-        {
-        }
+
         shared_ptr(std::shared_ptr<T> data)
             : m_data(std::move(data))
         {
@@ -35,23 +31,15 @@ namespace ce
         {
         }
 
+        shared_ptr(const shared_ptr<T>& data)
+            : m_data(data.m_data)
+            , m_is_const(false)
+        {
+        }
+
         shared_ptr& operator=(std::shared_ptr<T> v)
         {
             m_data = std::move(v);
-            return *this;
-        }
-
-        shared_ptr& operator=(shared_ptr<T> v)
-        {
-            m_data = std::move(v.m_data);
-            m_is_const = v.m_is_const;
-            return *this;
-        }
-
-        shared_ptr& operator=(shared_ptr<const T> v)
-        {
-            m_data = std::move(v.m_data);
-            m_is_const = true;
             return *this;
         }
 
