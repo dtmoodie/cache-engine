@@ -41,6 +41,20 @@ namespace ce
             return *this;
         }
 
+        shared_ptr& operator=(shared_ptr<T> v)
+        {
+            m_data = std::move(v.m_data);
+            m_is_const = v.m_is_const;
+            return *this;
+        }
+
+        shared_ptr& operator=(shared_ptr<const T> v)
+        {
+            m_data = std::move(v.m_data);
+            m_is_const = true;
+            return *this;
+        }
+
         const T* get() const
         {
             return m_data.get();
