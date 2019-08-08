@@ -9,7 +9,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
-int main(int argc, char** argv)
+int main(int , char**)
 {
     thrust::host_vector<float> h_vec;
     h_vec.resize(1000);
