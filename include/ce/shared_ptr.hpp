@@ -19,7 +19,6 @@ namespace ce
             return shared_ptr(std::make_shared<T>(std::forward<ARGS>(args)...));
         }
 
-
         shared_ptr(std::shared_ptr<T> data)
             : m_data(std::move(data))
         {
@@ -96,6 +95,16 @@ namespace ce
             return m_data;
         }
 
+        bool isConst() const
+        {
+            return m_is_const;
+        }
+
+        void setConst()
+        {
+            m_is_const = true;
+        }
+
       private:
         friend shared_ptr<const T>;
         void maybeCopy()
@@ -120,12 +129,6 @@ namespace ce
         static shared_ptr create(ARGS&&... args)
         {
             return shared_ptr(std::make_shared<T>(std::forward<ARGS>(args)...));
-        }
-
-        template <class... ARGS>
-        shared_ptr(ARGS&&... args)
-            : m_data(std::make_shared<T>(std::forward<ARGS>(args)...))
-        {
         }
 
         shared_ptr(const shared_ptr<T>& data)
@@ -189,6 +192,15 @@ namespace ce
         operator std::shared_ptr<const T>() const
         {
             return m_data;
+        }
+
+        bool isConst() const
+        {
+            return true;
+        }
+
+        void setConst()
+        {
         }
 
       private:
