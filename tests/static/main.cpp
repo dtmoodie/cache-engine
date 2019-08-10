@@ -67,20 +67,20 @@ BOOST_AUTO_TEST_CASE(initialize)
     ce::ICacheEngine::setEngine(ce::ICacheEngine::create());
 }
 
-void format(char* buf, int val, size_t size)
+void format(char* buf, int val, int size)
 {
     int written_chars = snprintf(buf, size, "%d", val);
-    for (size_t i = written_chars; i < size; ++i)
+    for (int i = written_chars; i < size; ++i)
     {
         buf[i] = ' ';
     }
 }
 
-void format(char* buf, long val, size_t size)
+void format(char* buf, long val, int size)
 {
-    snprintf(buf, size, "%d", val);
+    snprintf(buf, size, "%ld", val);
     bool null_found = false;
-    for (size_t i = 0; i < size; ++i)
+    for (int i = 0; i < size; ++i)
     {
         if (buf[i] == '\n')
         {
