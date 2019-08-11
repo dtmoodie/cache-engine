@@ -188,6 +188,28 @@ namespace ce
     }
 
     template <class T>
+    size_t generateHashDebugImpl(std::ostream& os, size_t idx, T&& arg)
+    {
+        auto hash = generateHash(arg);
+        os << idx << ": " << hash << " ";
+        return hash;
+    }
+
+    template <class T, class... ARGS>
+    size_t generateHashDebugImpl(std::ostream& os, size_t idx, T&& arg, ARGS&&... args)
+    {
+        auto hash = generateHash(arg);
+        os << idx << ": " << hash << " ";
+        return combineHash(hash, generateHashDebugImpl(os, idx + 1, std::forward<ARGS>(args)...));
+    }
+
+    template <class... ARGS>
+    size_t generateHashDebug(std::ostream& os, ARGS&&... args)
+    {
+        return generateHashDebugImpl(os, 0, std::forward<ARGS>(args)...);
+    }
+
+    template <class T>
     constexpr const char* ClassHasher<T>::name()
     {
         return __FUNCTION__;

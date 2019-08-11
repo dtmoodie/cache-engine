@@ -45,6 +45,11 @@ namespace ce
         return m_print_debug;
     }
 
+    void CacheEngine::printDebug(bool val)
+    {
+        m_print_debug = val;
+    }
+
     bool CacheEngine::wasCacheUsedLast() const
     {
         return m_was_used;
@@ -57,13 +62,15 @@ namespace ce
 
     std::shared_ptr<IResult> CacheEngine::getCachedResult(size_t fhash, size_t hash) const
     {
+        if (m_print_debug)
+        {
+            std::cout << "\n  arghash = " << hash << "  fhash = " << fhash << std::endl;
+        }
         auto itr = m_result_cache.find(combineHash(fhash, hash));
         if (itr != m_result_cache.end())
         {
-            m_was_used = true;
             return itr->second;
         }
-        m_was_used = false;
         return {};
     }
 

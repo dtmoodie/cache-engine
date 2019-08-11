@@ -14,6 +14,7 @@ namespace ce
         void pushCachedResult(std::shared_ptr<IResult>, size_t fhash, size_t arg_hash) override;
 
         bool printDebug() const override;
+        void printDebug(bool val) override;
         bool wasCacheUsedLast() const override;
         void setCacheWasUsed(bool) override;
         void clearCache() override;

@@ -44,6 +44,7 @@ namespace ce
         virtual std::shared_ptr<IResult> getCachedResult(size_t fhash, size_t hash) const = 0;
         virtual void pushCachedResult(std::shared_ptr<IResult>, size_t fhash, size_t arg_hash) = 0;
         virtual bool printDebug() const = 0;
+        virtual void printDebug(bool val) = 0;
         virtual bool wasCacheUsedLast() const = 0;
         virtual void setCacheWasUsed(bool) = 0;
         virtual void clearCache() = 0;
@@ -80,6 +81,7 @@ namespace ce
             if (tresult)
             {
                 tresult->getOutputs(args...);
+                setCacheWasUsed(true);
                 return;
             }
             func(ce::get(std::forward<Args>(args))...);
@@ -88,6 +90,7 @@ namespace ce
             tresult->setHash(combined_hash);
             tresult->saveOutputs(args...);
             pushCachedResult(tresult, fhash, arg_hash);
+            setCacheWasUsed(false);
         }
 
         // function returns a value
@@ -101,6 +104,7 @@ namespace ce
             if (tresult)
             {
                 tresult->getOutputs(ret, args...);
+                setCacheWasUsed(true);
                 return ret;
             }
             ret = func(ce::get(std::forward<Args>(args))...);
@@ -109,6 +113,7 @@ namespace ce
             tresult->setHash(combined_hash);
             tresult->saveOutputs(ret, args...);
             pushCachedResult(tresult, fhash, arg_hash);
+            setCacheWasUsed(false);
             return ret;
         }
 
@@ -121,7 +126,15 @@ namespace ce
         getCachedResult(size_t& fhash, size_t& arg_hash, R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
         {
             fhash = memberFunctionPointerValue(func);
-            arg_hash = generateHash(generateHash(obj), std::forward<ARGS>(args)...);
+            if (this->printDebug())
+            {
+                arg_hash = generateHashDebug(std::cout, obj, std::forward<ARGS>(args)...);
+            }
+            else
+            {
+                arg_hash = generateHash(obj, std::forward<ARGS>(args)...);
+            }
+
             auto result = getCachedResult(fhash, arg_hash);
             if (result)
             {
@@ -141,6 +154,7 @@ namespace ce
             if (result)
             {
                 result->getOutputs(ret, args...);
+                setCacheWasUsed(true);
                 return ret;
             }
             const auto& obj_ref = get(obj);
@@ -150,6 +164,7 @@ namespace ce
             result->setHash(combined_hash);
             result->saveOutputs(ret, args...);
             pushCachedResult(result, fhash, arg_hash);
+            setCacheWasUsed(false);
             return ret;
         }
 
@@ -166,6 +181,7 @@ namespace ce
             if (result)
             {
                 result->getOutputs(args...);
+                setCacheWasUsed(true);
                 return;
             }
             const auto& obj = get(object);
@@ -175,6 +191,7 @@ namespace ce
             result->setHash(combined_hash);
             result->saveOutputs(args...);
             pushCachedResult(result, fhash, arg_hash);
+            setCacheWasUsed(false);
         }
 
         template <class T, class U, class... FARGS, class... ARGS>
@@ -182,7 +199,15 @@ namespace ce
         getCachedResult(size_t& fhash, size_t& arghash, void (T::*func)(FARGS...), U& object, ARGS&&... args)
         {
             fhash = memberFunctionPointerValue(func);
-            arghash = generateHash(generateHash(object), std::forward<ARGS>(args)...);
+            if (this->printDebug())
+            {
+                arghash = generateHashDebug(std::cout, object, std::forward<ARGS>(args)...);
+            }
+            else
+            {
+                arghash = generateHash(object, std::forward<ARGS>(args)...);
+            }
+            // arghash = generateHash(generateHash(object), std::forward<ARGS>(args)...);
             auto result = getCachedResult(fhash, arghash);
             if (result)
             {
@@ -202,6 +227,7 @@ namespace ce
             if (result)
             {
                 result->getOutputs(args...);
+                setCacheWasUsed(true);
                 return;
             }
 
@@ -212,6 +238,7 @@ namespace ce
             result->saveOutputs(args...);
             setHash(combined_hash, object);
             pushCachedResult(result, fhash, arg_hash);
+            setCacheWasUsed(false);
         }
     };
 }

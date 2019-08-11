@@ -131,7 +131,10 @@ namespace ce
         template <size_t IDX, class TupleType, class... Args>
         static void saveOutput(size_t hash, TupleType& result, T& out, Args&&...)
         {
-            out.setHash(ct::combineHash(hash, IDX));
+            if (out.hash() == 0)
+            {
+                out.setHash(ct::combineHash(hash, IDX));
+            }
             std::get<IDX>(result) = out;
         }
     };
