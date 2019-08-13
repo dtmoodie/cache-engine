@@ -42,6 +42,13 @@ namespace ce
             return *this;
         }
 
+        shared_ptr& operator=(const shared_ptr<const T>& v)
+        {
+            m_data = v.m_data;
+            m_is_const = true;
+            return *this;
+        }
+
         const T* get() const
         {
             return m_data.get();
@@ -111,8 +118,13 @@ namespace ce
         {
             if (m_is_const && m_data)
             {
-                m_data = std::make_shared<T>(*m_data);
-                m_is_const = false;
+                // We don't need to copy the data if we are the only ones holding a reference to it
+                // However this appears to not account for weak_ptrs.. TODO more research needed
+                if(m_data.use_count() != 1)
+                {
+                    m_data = std::make_shared<T>(*m_data);
+                    m_is_const = false;
+                }
             }
         }
 
@@ -148,10 +160,22 @@ namespace ce
             return *this;
         }
 
-        shared_ptr& operator=(std::shared_ptr<const T> v)
+        shared_ptr& operator=(const std::shared_ptr<const T>& v)
         {
             // shh nothing to see here
             m_data = std::shared_ptr<T>(const_cast<T*>(v.get()), [v](T*) {});
+            return *this;
+        }
+
+        shared_ptr& operator=(const shared_ptr<T>& v)
+        {
+            m_data = v.m_data;
+            return *this;
+        }
+
+        shared_ptr& operator=(const shared_ptr<const T>& v)
+        {
+            m_data = v.m_data;
             return *this;
         }
 
