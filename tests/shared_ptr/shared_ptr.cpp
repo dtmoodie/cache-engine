@@ -1,37 +1,36 @@
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MAIN
-
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE "CE::StaticFunctionTest"
-
-#include <boost/test/unit_test.hpp>
-#include <boost/thread.hpp>
+#include "gtest/gtest.h"
 
 #include <ce/shared_ptr.hpp>
 
 using namespace ce;
 
-BOOST_AUTO_TEST_CASE(copy_on_write)
+int main(int argc, char** argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+
+TEST(shared_ptr, copy_on_write)
 {
     shared_ptr<float> ptr(std::make_shared<float>(5.0));
     shared_ptr<const float> cptr(ptr);
-    BOOST_REQUIRE_EQUAL(ptr.get(), cptr.get());
+    EXPECT_EQ(ptr.get(), cptr.get());
     *ptr = 6;
-    BOOST_REQUIRE_EQUAL(*ptr, *cptr);
+    EXPECT_EQ(*ptr, *cptr);
     shared_ptr<float> cow(cptr);
-    BOOST_REQUIRE_EQUAL(static_cast<const shared_ptr<float>&>(cow).get(), cptr.get());
+    EXPECT_EQ(static_cast<const shared_ptr<float>&>(cow).get(), cptr.get());
     auto cow_ptr = cow.get();
-    BOOST_REQUIRE_NE(cow_ptr, cptr.get());
+    EXPECT_NE(cow_ptr, cptr.get());
     *cow = 10;
-    BOOST_REQUIRE_NE(*ptr, 10);
-    BOOST_REQUIRE_EQUAL(*cow, 10);
-    BOOST_REQUIRE_EQUAL(cow.get(), cow_ptr);
+    EXPECT_NE(*ptr, 10);
+    EXPECT_EQ(*cow, 10);
+    EXPECT_EQ(cow.get(), cow_ptr);
 }
 
-
-BOOST_AUTO_TEST_CASE(const_handle_no_copy)
+TEST(shared_ptr, const_handle_no_copy)
 {
-    // This tests a special case where a mutable handle is created from a const handle, but the mutable handle is the only
+    // This tests a special case where a mutable handle is created from a const handle, but the mutable handle is the
+    // only
     // shared ptr with a reference to the data.
     // Since no one else cares for the data, we can be certain that
     float* raw = nullptr;
@@ -46,10 +45,10 @@ BOOST_AUTO_TEST_CASE(const_handle_no_copy)
         test = cptr;
     }
 
-    BOOST_REQUIRE_EQUAL(test.get(), raw);
+    EXPECT_EQ(test.get(), raw);
 }
 
-BOOST_AUTO_TEST_CASE(const_handle_copy)
+TEST(shared_ptr, const_handle_copy)
 {
     float* raw = nullptr;
     shared_ptr<float> test;
@@ -63,5 +62,5 @@ BOOST_AUTO_TEST_CASE(const_handle_copy)
         test = cptr;
     }
 
-    BOOST_REQUIRE_NE(test.get(), raw);
+    EXPECT_NE(test.get(), raw);
 }

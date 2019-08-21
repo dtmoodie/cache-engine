@@ -1,13 +1,7 @@
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MAIN
-
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE "CE::StaticFunctionTest"
 
 #define CE_DEBUG_CACHE_USAGE
+#include "gtest/gtest.h"
 #include <algorithm>
-#include <boost/test/unit_test.hpp>
-#include <boost/thread.hpp>
 
 #include <ce/execute.hpp>
 #include <ct/StringView.hpp>
@@ -16,6 +10,12 @@
 #include <cmath>
 #include <math.h>
 #include <vector>
+
+int main(int argc, char** argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
 
 void foo0()
 {
@@ -62,7 +62,7 @@ void foo7(const std::vector<int>& input, double& output)
     }
 }
 
-BOOST_AUTO_TEST_CASE(initialize)
+TEST(initialize, create)
 {
     ce::ICacheEngine::setEngine(ce::ICacheEngine::create());
 }
@@ -205,179 +205,179 @@ uint64_t decouple(uint64_t v0, uint64_t v1)
     return v0 - v1;
 }
 
-BOOST_AUTO_TEST_CASE(test_foo1)
+TEST(test, foo1)
 {
     auto val = golden64fwd(ce::generateHash(&foo1));
     auto rev = golden64rev(val);
 
-    BOOST_REQUIRE_EQUAL(rev, ce::generateHash(&foo1));
+    EXPECT_EQ(rev, ce::generateHash(&foo1));
     // auto spec_size = ct::specifierSize<2>("asdf {3} {4}");
     // fmt("asdf {3} {4}", 4, 5);
-    BOOST_REQUIRE_EQUAL(ce::exec(foo1, 10), foo1(10));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_EQUAL(ce::exec(foo1, 11), foo1(11));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(ce::exec(foo1, 10), foo1(10));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(ce::exec(foo1, 11), foo1(11));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
     // Get cached results
-    BOOST_REQUIRE_EQUAL(ce::exec(foo1, 10), foo1(10));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(ce::exec(foo1, 11), foo1(11));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(ce::exec(foo1, 10), foo1(10));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(ce::exec(foo1, 11), foo1(11));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
 
-BOOST_AUTO_TEST_CASE(test_foo2)
+TEST(test, foo2)
 {
-    BOOST_REQUIRE_EQUAL(ce::exec(foo2, 10, 5.0), foo2(10, 5.0));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_EQUAL(ce::exec(foo2, 11, 6.0), foo2(11, 6.0));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(ce::exec(foo2, 10, 5.0), foo2(10, 5.0));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(ce::exec(foo2, 11, 6.0), foo2(11, 6.0));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
     // Get cached results
-    BOOST_REQUIRE_EQUAL(ce::exec(foo2, 10, 5.0), foo2(10, 5.0));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(ce::exec(foo2, 11, 6.0), foo2(11, 6.0));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(ce::exec(foo2, 10, 5.0), foo2(10, 5.0));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(ce::exec(foo2, 11, 6.0), foo2(11, 6.0));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
 
-BOOST_AUTO_TEST_CASE(test_foo3)
+TEST(test, foo3)
 {
-    BOOST_REQUIRE_EQUAL(ce::exec(foo3, 2, 3, 4), foo3(2, 3, 4));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_EQUAL(ce::exec(foo3, 5, 6, 7), foo3(5, 6, 7));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(ce::exec(foo3, 2, 3, 4), foo3(2, 3, 4));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(ce::exec(foo3, 5, 6, 7), foo3(5, 6, 7));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
     // Get cached results
-    BOOST_REQUIRE_EQUAL(ce::exec(foo3, 2, 3, 4), foo3(2, 3, 4));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(ce::exec(foo3, 5, 6, 7), foo3(5, 6, 7));
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(ce::exec(foo3, 2, 3, 4), foo3(2, 3, 4));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(ce::exec(foo3, 5, 6, 7), foo3(5, 6, 7));
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
 
-BOOST_AUTO_TEST_CASE(scale_vector)
+TEST(test, scale_vector)
 {
     float data = 10;
     auto val = ce::exec(&scaleData, ce::makeOutput(data), 2.0, 3.0);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_EQUAL(val, 1);
-    BOOST_REQUIRE_EQUAL(data, 10 * 2 + 3);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(val, 1);
+    EXPECT_EQ(data, 10 * 2 + 3);
     data = 10;
     val = ce::exec(&scaleData, ce::makeOutput(data), 2.0, 3.0);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(val, 1);
-    BOOST_REQUIRE_EQUAL(data, 10 * 2 + 3);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(val, 1);
+    EXPECT_EQ(data, 10 * 2 + 3);
 }
 
-BOOST_AUTO_TEST_CASE(embedded_hash)
+TEST(test, embedded_hash)
 {
     auto eng = ce::ICacheEngine::instance();
     auto ret = eng->exec(&create, 4, 5);
     ct::StaticEqualTypes<decltype(ret), EmbeddedHash>{};
-    BOOST_REQUIRE_NE(ret.hash(), 0);
-    BOOST_REQUIRE_EQUAL(ret.val, 20);
+    EXPECT_NE(ret.hash(), 0);
+    EXPECT_EQ(ret.val, 20);
 
     const auto hash = ret.hash();
     ret = eng->exec(&create, 4, 5);
-    BOOST_REQUIRE_EQUAL(ret.hash(), hash);
-    BOOST_REQUIRE_EQUAL(eng->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(ret.val, 20);
+    EXPECT_EQ(ret.hash(), hash);
+    EXPECT_EQ(eng->wasCacheUsedLast(), true);
+    EXPECT_EQ(ret.val, 20);
     ret = eng->exec(&create, 5, 5);
-    BOOST_REQUIRE_EQUAL(eng->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_NE(ret.hash(), hash);
-    BOOST_REQUIRE_EQUAL(ret.val, 25);
+    EXPECT_EQ(eng->wasCacheUsedLast(), false);
+    EXPECT_NE(ret.hash(), hash);
+    EXPECT_EQ(ret.val, 25);
 
     auto shared_ret = eng->exec(&createShared, 4, 5);
-    BOOST_REQUIRE_EQUAL(eng->wasCacheUsedLast(), false);
+    EXPECT_EQ(eng->wasCacheUsedLast(), false);
     shared_ret = eng->exec(&createShared, 4, 5);
-    BOOST_REQUIRE_EQUAL(eng->wasCacheUsedLast(), true);
+    EXPECT_EQ(eng->wasCacheUsedLast(), true);
 }
 
-BOOST_AUTO_TEST_CASE(test_foo4)
+TEST(test, foo4)
 {
     double result1, result2 = 0.0;
     auto out1 = ce::makeOutput(result1);
     ce::exec(foo4, 2, 3, 4, out1);
     foo4(2, 3, 4, result2);
-    BOOST_REQUIRE_EQUAL(result1, result2);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(result1, result2);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
 
     auto out2 = ce::makeOutput(result1);
     ce::exec(foo4, 5, 6, 7, out2);
     foo4(5, 6, 7, result2);
-    BOOST_REQUIRE_EQUAL(result1, result2);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_NE(out1.hash(), out2.hash());
+    EXPECT_EQ(result1, result2);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_NE(out1.hash(), out2.hash());
 
     // Get cached results
     auto out3 = ce::makeOutput(result1);
     ce::exec(foo4, 2, 3, 4, out3);
     foo4(2, 3, 4, result2);
-    BOOST_REQUIRE_EQUAL(out1.hash(), out3.hash());
-    BOOST_REQUIRE_EQUAL(result1, result2);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(out1.hash(), out3.hash());
+    EXPECT_EQ(result1, result2);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 
     auto out4 = ce::makeOutput(result1);
     ce::exec(foo4, 5, 6, 7, out4);
     foo4(5, 6, 7, result2);
-    BOOST_REQUIRE_EQUAL(out2.hash(), out4.hash());
-    BOOST_REQUIRE_EQUAL(result1, result2);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(out2.hash(), out4.hash());
+    EXPECT_EQ(result1, result2);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
 
-BOOST_AUTO_TEST_CASE(test_chain)
+TEST(test, chain)
 {
     auto result1 = ce::exec(foo2, 5, 10);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
     auto result2 = ce::exec(foo3, ce::makeInput(result1), 4, 5);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
 
     auto result3 = ce::exec(foo2, 5, 10);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(result1.hash(), result3.hash());
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(result1.hash(), result3.hash());
     auto result4 = ce::exec(foo3, ce::makeInput(result3), 4, 5);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(result2.hash(), result4.hash());
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(result2.hash(), result4.hash());
 }
 
-BOOST_AUTO_TEST_CASE(test_multi_out)
+TEST(test, multi_out)
 {
     int val1 = 0.0;
     double val2 = 0.0;
     auto out1 = ce::makeOutput(val1);
     auto out2 = ce::makeOutput(val2);
     auto ret1 = ce::exec(foo5, 4, 5, out1, out2);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_NE(out1.hash(), out2.hash());
-    BOOST_REQUIRE_NE(out1.hash(), ret1.hash());
-    BOOST_REQUIRE_EQUAL(out1.data, 4 * 5);
-    BOOST_REQUIRE_EQUAL(out2.data, 4 + 5);
-    BOOST_REQUIRE_EQUAL(ret1, out1.data + out2.data);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_NE(out1.hash(), out2.hash());
+    EXPECT_NE(out1.hash(), ret1.hash());
+    EXPECT_EQ(out1.data, 4 * 5);
+    EXPECT_EQ(out2.data, 4 + 5);
+    EXPECT_EQ(ret1, out1.data + out2.data);
 
     auto out3 = ce::makeOutput(val1);
     auto out4 = ce::makeOutput(val2);
     auto ret2 = ce::exec(foo5, 4, 5, out3, out4);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(out3.hash(), out1.hash());
-    BOOST_REQUIRE_EQUAL(out4.hash(), out2.hash());
-    BOOST_REQUIRE_EQUAL(ret1.hash(), ret2.hash());
-    BOOST_REQUIRE_EQUAL(out3.data, 4 * 5);
-    BOOST_REQUIRE_EQUAL(out4.data, 4 + 5);
-    BOOST_REQUIRE_EQUAL(ret2, out3.data + out4.data);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(out3.hash(), out1.hash());
+    EXPECT_EQ(out4.hash(), out2.hash());
+    EXPECT_EQ(ret1.hash(), ret2.hash());
+    EXPECT_EQ(out3.data, 4 * 5);
+    EXPECT_EQ(out4.data, 4 + 5);
+    EXPECT_EQ(ret2, out3.data + out4.data);
     int in = 5;
     int out = 0;
 
     ce::exec(foo6, in, ce::makeOutput(&out), 4, 5, 6);
 }
 
-BOOST_AUTO_TEST_CASE(const_ref_input)
+TEST(test, const_ref_input)
 {
     auto input = ce::makeInput<std::vector<int>>(100, 5);
     double val = 0.0;
     auto out1 = ce::makeOutput(val);
     ce::exec(&foo7, input, out1);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
-    BOOST_REQUIRE_EQUAL(val, 100 * 5);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(val, 100 * 5);
     auto out2 = ce::makeOutput(val);
     ce::exec(&foo7, input, out2);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
-    BOOST_REQUIRE_EQUAL(out1.hash(), out2.hash());
-    BOOST_REQUIRE_NE(out1.hash(), 0);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(out1.hash(), out2.hash());
+    EXPECT_NE(out1.hash(), 0);
 }
 
 void foo7Wrapper(const std::vector<int>& input, double& output)
@@ -387,12 +387,12 @@ void foo7Wrapper(const std::vector<int>& input, double& output)
 
 // Less efficient because a hash is calculated on the whole vector every call inside of ce::wrapInput
 // In most cases it is preferrable to use makeInput
-BOOST_AUTO_TEST_CASE(wrapper_function)
+TEST(test, wrapper_function)
 {
     std::vector<int> in(100, 5);
     double out = 0.0;
     foo7Wrapper(in, out);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), false);
     foo7Wrapper(in, out);
-    BOOST_REQUIRE_EQUAL(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
+    EXPECT_EQ(ce::ICacheEngine::instance()->wasCacheUsedLast(), true);
 }
