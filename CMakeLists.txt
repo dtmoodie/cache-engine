@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
-project(cache-engine)
+CMAKE_POLICY(SET CMP0048 NEW)
+project(cache-engine 
+    VERSION 1.0.0
+    LANGUAGES CXX
+)
+
 option(BUILD_TESTS "Build tests" ON)
 
 set(CMAKE_DEBUG_POSTFIX "d")
