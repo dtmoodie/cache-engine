@@ -5,13 +5,6 @@
 
 namespace ce
 {
-
-    template <class T>
-    T& get(T& data)
-    {
-        return data;
-    }
-
     template <class T>
     T&& get(T&& data)
     {
@@ -186,4 +179,4 @@ namespace ce
     {
         return 0;
     }
-}
+} // namespace ce
