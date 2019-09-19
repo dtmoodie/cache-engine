@@ -1,0 +1,20 @@
+dist:
+ - trusty
+
+sudo: false
+
+language: cpp
+compiler: gcc
+
+cache:
+  apt: true
+
+before_install:
+ - git clone https://github.com/dtmoodie/cereal -b v1.2.2_fixed
+
+script:
+ - mkdir build
+ - cd build
+ - cmake .. -Dcereal_INCLUDE_DIR=$TRAVIS_BUILD_DIR/cereal/include
+ - make
+ - make test
