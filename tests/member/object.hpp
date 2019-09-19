@@ -7,7 +7,7 @@ namespace ce
     size_t& getObjectHash(MutateOutputObject& obj);
     MutateOutputObject& get(MutateOutputObject& obj);
     const MutateOutputObject& get(const MutateOutputObject& obj);
-}
+} // namespace ce
 
 #include <ce/Executor.hpp>
 #include <ce/execute.hpp>
@@ -75,13 +75,13 @@ struct MutateOutputObject
   protected:
     friend size_t& ce::getObjectHash(MutateOutputObject& obj);
     friend const size_t& ce::getObjectHash(const MutateOutputObject& obj);
-    size_t hash = ce::classHash<MutateOutputObject>();
+    size_t hash = 0;
     int member;
 };
 
 struct TestHashedObject : public TestObject
 {
-    size_t m_hash = ce::classHash<TestHashedObject>();
+    size_t m_hash = 0;
 };
 
 namespace ce
@@ -122,4 +122,4 @@ namespace ce
     {
         return obj;
     }
-}
+} // namespace ce

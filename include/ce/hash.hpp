@@ -48,19 +48,6 @@ namespace ce
     template <class... Args>
     inline size_t generateHash(Args&&... args);
 
-    template <class T>
-    struct ClassHasher
-    {
-        static inline constexpr const char* name();
-        static inline constexpr uint32_t hash();
-    };
-
-    template <class T>
-    inline constexpr uint32_t classHash();
-
-    template <class T>
-    inline constexpr const char* className();
-
     ///////////////////////////////////////////////////////////////////////////////////
     /// IMPLEMENTATION
     ///////////////////////////////////////////////////////////////////////////////////
@@ -208,28 +195,4 @@ namespace ce
     {
         return generateHashDebugImpl(os, 0, std::forward<ARGS>(args)...);
     }
-
-    template <class T>
-    constexpr const char* ClassHasher<T>::name()
-    {
-        return __FUNCTION__;
-    }
-
-    template <class T>
-    constexpr uint32_t ClassHasher<T>::hash()
-    {
-        return ct::crc32(__FUNCTION__);
-    }
-
-    template <class T>
-    constexpr uint32_t classHash()
-    {
-        return ClassHasher<T>::hash();
-    }
-
-    template <class T>
-    constexpr const char* className()
-    {
-        return ClassHasher<T>::name();
-    }
-}
+} // namespace ce
