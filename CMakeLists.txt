@@ -50,29 +50,35 @@ ENDIF(OpenCV_FOUND)
 add_executable(example_ce_main main.cpp)
 TARGET_LINK_LIBRARIES(example_ce_main ce)
 
-IF(CUDA_FOUND)
-    file(GLOB_RECURSE src "tests/cuda/*.cpp" "tests/cuda/*.cu")
-    cuda_add_executable(test_ce_cuda_sync ${src})
-    TARGET_LINK_LIBRARIES(test_ce_cuda_sync ce)
-ENDIF()
-
-if(OpenCV_FOUND)
-    add_executable(test_ce_opencv_sync "tests/opencv/main.cpp")
-    TARGET_LINK_LIBRARIES(test_ce_opencv_sync ce)
-endif()
-
 if(BUILD_TESTS)
+    enable_testing()
+    IF(CUDA_FOUND)
+        file(GLOB_RECURSE src "tests/cuda/*.cpp" "tests/cuda/*.cu")
+        cuda_add_executable(test_ce_cuda_sync ${src})
+        TARGET_LINK_LIBRARIES(test_ce_cuda_sync ce)
+        add_test(test_ce_cuda_sync test_ce_cuda_sync)
+    ENDIF()
+
+    if(OpenCV_FOUND)
+        add_executable(test_ce_opencv_sync "tests/opencv/main.cpp")
+        TARGET_LINK_LIBRARIES(test_ce_opencv_sync ce)
+        add_test(test_ce_opencv_sync test_ce_opencv_sync)
+    endif()
+
     file(GLOB_RECURSE src "tests/static/*.cpp")
     add_executable(test_ce_static_function ${src})
     target_link_libraries(test_ce_static_function ce gtest gtest_main)
+    add_test(test_ce_static_function test_ce_static_function)
 
     file(GLOB_RECURSE src "tests/member/*.cpp")
     add_executable(test_ce_member_function ${src})
     target_link_libraries(test_ce_member_function ce gtest gtest_main)
+    add_test(test_ce_member_function test_ce_member_function)
 
     file(GLOB_RECURSE src "tests/shared_ptr/*.cpp")
     add_executable(test_ce_shared_ptr ${src})
     target_link_libraries(test_ce_shared_ptr ce gtest gtest_main)
+    add_test(test_ce_shared_ptr test_ce_shared_ptr)
 ENDIF()
 
 export(TARGETS ce
