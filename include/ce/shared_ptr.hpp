@@ -120,7 +120,7 @@ namespace ce
             {
                 // We don't need to copy the data if we are the only ones holding a reference to it
                 // However this appears to not account for weak_ptrs.. TODO more research needed
-                if(m_data.use_count() != 1)
+                if (m_data.use_count() != 1)
                 {
                     m_data = std::make_shared<T>(*m_data);
                     m_is_const = false;
