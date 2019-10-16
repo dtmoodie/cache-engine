@@ -3,3 +3,4 @@ ce.dir
 main.dir
 x64
 CMakeLists.txt.*
+.vscode/
