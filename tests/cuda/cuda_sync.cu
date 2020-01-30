@@ -15,7 +15,7 @@ struct pow_op{
     }
 };
 
-void async_processor::apply(const thrust::device_vector<float>& input, std::shared_ptr<thrust::device_vector<float>>& output, cudaStream_t stream){
+void async_processor::apply(const thrust::device_vector<float>& input, std::shared_ptr<thrust::device_vector<float>>& output, cudaStream_t stream) const{
     if(!output)
         output.reset(new thrust::device_vector<float>());
     output->resize(input.size());

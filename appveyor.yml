@@ -1,0 +1,54 @@
+version: 1.0.{build}
+image:
+- Previous Visual Studio 2017
+- Visual Studio 2017
+- Ubuntu
+- Previous Ubuntu
+- ubuntu1804
+
+clone_depth: 5
+
+for:
+  -
+    matrix:
+      only:
+        - image: ubuntu1804
+    environment:
+      CC: /usr/bin/gcc-8
+      CXX: /usr/bin/g++-8
+
+before_build:
+- git submodule update --init --recursive
+
+- cmd: >-
+   if not exist "build" mkdir build
+   
+   cd build
+   
+   cmake .. -DBOOST_ROOT=C:\Libraries\boost_1_67_0 -DBOOST_LIBRARYDIR=C:\Libraries\boost_1_67_0\stage\lib -DBUILD_EXAMPLES=OFF
+
+- sh: >-
+    sudo apt install libboost-all-dev -y
+
+    mkdir -p build
+    
+    cd build
+    
+    cmake ..
+
+build_script:
+- cmd: >-
+    msbuild cache-engine.sln
+
+- sh: make
+
+test_script:
+- cmd: >-
+   cd tests
+
+
+- sh: >-
+   ./test_ce_static_function
+
+   ./test_ce_member_function
+   

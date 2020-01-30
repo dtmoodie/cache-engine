@@ -1,103 +1,148 @@
 #pragma once
 #include <ce/export.hpp>
-#include <iostream>
-namespace ce {
+#include <ce/hash.hpp>
 
-template<class T> 
-struct HashedOutput {
-    HashedOutput(){}
-    HashedOutput(const T& val, size_t hash = 0):
-    m_ref(val), m_hash(hash){
+#include <iostream>
+#include <memory>
+namespace ce
+{
+    struct HashedBase
+    {
+        size_t hash() const;
+
+        void setHash(size_t val);
+
+      private:
+        size_t m_hash = 0;
+    };
+
+    void setHash(size_t, HashedBase&);
+
+    struct HashedOutputBase : HashedBase
+    {
+    };
+
+    template <class T>
+    struct HashedOutput : HashedOutputBase
+    {
+        using type = T;
+        HashedOutput(T val = {})
+            : data(std::move(val))
+        {
+        }
+
+        operator T&()
+        {
+            return data;
+        }
+        operator const T&() const
+        {
+            return data;
+        }
+
+        T data;
+    };
+
+    // This version is used for wrapping other objects
+    template <class T>
+    struct HashedOutput<T&> : HashedOutputBase
+    {
+        using type = T;
+        HashedOutput(T& ref)
+            : data(ref)
+        {
+        }
+
+        operator T&()
+        {
+            return data;
+        }
+        operator const T&() const
+        {
+            return data;
+        }
+
+        T& data;
+    };
+
+    template <class T, class E = void, int P = 10>
+    struct ReturnSelector : ReturnSelector<T, E, P - 1>
+    {
+    };
+
+    template <class T>
+    struct ReturnSelector<T, void, 0>
+    {
+        using type = HashedOutput<T>;
+    };
+
+    template <>
+    struct ReturnSelector<void, void, 1>
+    {
+        using type = void;
+    };
+
+    template <class T>
+    struct ReturnSelector<T, typename std::enable_if<std::is_base_of<HashedBase, T>::value>::type, 9>
+    {
+        using type = T;
+    };
+
+    template <class T>
+    struct ReturnSelector<
+        std::shared_ptr<T>,
+        typename std::enable_if<std::is_base_of<HashedBase, typename std::decay<T>::type>::value>::type,
+        9>
+    {
+        using type = std::shared_ptr<T>;
+    };
+
+    template <class T>
+    using ReturnSelect = typename ReturnSelector<T>::type;
+
+    template <typename T>
+    std::ostream& operator<<(std::ostream& os, const HashedOutput<T>& value)
+    {
+        os << value.data << ':' << value.hash();
+        return os;
     }
 
-    HashedOutput(T&& val, size_t hash = 0):
-        m_ref(std::move(val)), m_hash(hash){}
+    template <class T>
+    HashedOutput<T&> makeOutput(T& ref)
+    {
+        return HashedOutput<T&>(ref);
+    }
 
-    operator T&() {return m_ref;}
-    operator const T&() const {return m_ref;}
+    template <class T>
+    HashedOutput<T*> makeOutput(T* ptr)
+    {
+        return HashedOutput<T*>(ptr);
+    }
 
-    T m_ref;
-    size_t m_hash = 0;
-};
+    template <class T>
+    T& get(HashedOutput<T>& data)
+    {
+        return data.data;
+    }
 
-// This version is used for wrapping other objects
-template<class T>
-struct HashedOutput<T&> {
+    template <class T>
+    T& get(HashedOutput<T&> data)
+    {
+        return data.data;
+    }
 
-    HashedOutput(T& ref) :
-        m_ref(ref), m_hash(m_owned_hash) {}
+    template <class T>
+    T* get(HashedOutput<T*> data)
+    {
+        return data.data;
+    }
 
-    HashedOutput(T& ref, size_t& hash): 
-    m_ref(ref), m_hash(hash){}
-
-
-    operator T&() { return m_ref; }
-    operator const T&() const { return m_ref; }
-
-    T& m_ref;
-    size_t& m_hash;
-    size_t m_owned_hash = 0;
-};
-
-template<class T>
-T& get(HashedOutput<T&>&& val){
-    return val.m_ref;
-}
-
-template<typename T>
-std::ostream& operator<<(std::ostream& os, const HashedOutput<T>& value){
-    os << value.m_ref << ':' << value.m_hash;
-    return os;
-}
-
-template<class T> 
-HashedOutput<T&> makeOutput(T& ref) {
-    return HashedOutput<T&>(ref);
-}
-
-template<class T>
-HashedOutput<T*> makeOutput(T* ptr) {
-	return HashedOutput<T*>(ptr);
-}
-
-template<class T>
-size_t generateHash(const HashedOutput<T>& output){
-    return 0;
-}
-
-template<class T>
-size_t combineHash(size_t seed, const HashedOutput<T>& v) {
-    (void)v;
-    return seed;
-}
-
-template<class T>
-size_t combineHash(size_t seed, HashedOutput<T>&& v) {
-    (void)v;
-    return seed;
-}
-
-template<class T> 
-T& get(HashedOutput<T>&& data) {
-    return data.m_ref;
-}
-
-template<class T> 
-T& get(HashedOutput<T>& data) {
-    return data.m_ref;
-}
-template<class T>
-constexpr bool outputDetectorHelper(ce::HashedOutput<T>* ptr = 0) {
-    return true;
-}
-template<class T>
-constexpr bool outputDetectorHelper(T* ptr = 0) {
-    return false;
-}
-
-template<class T>
-constexpr bool outputDetector() {
-    return outputDetectorHelper(static_cast<T*>(0));
-}
-
+    template <class T>
+    struct HashSelector<T, typename std::enable_if<std::is_base_of<ce::HashedBase, T>::value>::type, 9>
+    {
+        static size_t generateHash(const HashedBase& v)
+        {
+            return v.hash();
+        }
+    };
 } // namespace ce

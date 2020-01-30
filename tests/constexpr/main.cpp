@@ -1,4 +1,4 @@
-#include <ce/OutputPack.hpp>
+/*#include <ce/OutputPack.hpp>
 #include <ce/input.hpp>
 #include <ce/output.hpp>
 #include <ce/type_traits.hpp>
@@ -57,4 +57,8 @@ int main(int argc, char** argv){
         printSavetype<ce::HashedOutput<int>, ce::HashedOutput<int>>(setter);
     }
     return 0;
+}*/
+int main()
+{
+    
 }
