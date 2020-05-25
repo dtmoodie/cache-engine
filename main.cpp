@@ -98,6 +98,7 @@ int main()
     auto engine = ICacheEngine::create();
     ICacheEngine::setEngine(engine);
     auto hashed = makeInput<int>(5);
+    (void)hashed;
     std::cout << exec(foo1, 0) << std::endl;
     std::cout << exec(foo1, 0) << std::endl;
     std::cout << exec(foo2, 0) << std::endl;

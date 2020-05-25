@@ -13,11 +13,14 @@ int main(int argc, char** argv)
 TEST(shared_ptr, copy_on_write)
 {
     shared_ptr<float> ptr(std::make_shared<float>(5.0));
+    ASSERT_TRUE(ptr.getCopier());
     shared_ptr<const float> cptr(ptr);
+    ASSERT_TRUE(cptr.getCopier());
     EXPECT_EQ(ptr.get(), cptr.get());
     *ptr = 6;
     EXPECT_EQ(*ptr, *cptr);
     shared_ptr<float> cow(cptr);
+    ASSERT_TRUE(cow.getCopier());
     EXPECT_EQ(static_cast<const shared_ptr<float>&>(cow).get(), cptr.get());
     auto cow_ptr = cow.get();
     EXPECT_NE(cow_ptr, cptr.get());

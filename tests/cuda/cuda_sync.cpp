@@ -9,7 +9,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
-int main(int , char**)
+int main(int, char**)
 {
     thrust::host_vector<float> h_vec;
     h_vec.resize(1000);
@@ -21,6 +21,7 @@ int main(int , char**)
 
     std::shared_ptr<thrust::device_vector<float>> d_out;
     auto exec = ce::wrapHash(async_processor());
+    (void)exec;
     cudaStream_t stream = nullptr;
     cudaStreamCreate(&stream);
     return 0;
