@@ -30,7 +30,7 @@ namespace ce
         {
             return eng->exec(func, std::forward<Args>(args)...);
         }
-        return func(get(std::forward<Args>(args))...);
+        return func(std::forward<Args>(args)...);
     }
 
     template <class R, class T, class U, class... FARGS, class... ARGS>
@@ -68,4 +68,4 @@ namespace ce
         }
         return (get(obj).*func)(std::forward<ARGS>(args)...);
     }
-}
+} // namespace ce

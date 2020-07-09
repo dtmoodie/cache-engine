@@ -29,9 +29,16 @@ namespace ce
         {
             return data;
         }
+
         operator const ct::remove_reference_t<T>&() const
         {
             return data;
+        }
+
+        template <class U>
+        operator U()
+        {
+            return U(data);
         }
 
         T data;
@@ -51,9 +58,16 @@ namespace ce
         {
             return data;
         }
+
         operator const ct::remove_reference_t<T>&() const
         {
             return data;
+        }
+
+        template <class U>
+        operator U()
+        {
+            return U(data);
         }
 
         T& data;

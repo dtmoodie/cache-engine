@@ -84,7 +84,7 @@ namespace ce
                 setCacheWasUsed(true);
                 return;
             }
-            func(ce::get(std::forward<Args>(args))...);
+            func(std::forward<Args>(args)...);
             tresult = std::make_shared<typename decltype(tresult)::element_type>();
             const auto combined_hash = combineHash(fhash, arg_hash);
             tresult->setHash(combined_hash);
@@ -236,9 +236,9 @@ namespace ce
             const auto combined_hash = combineHash(fhash, arg_hash);
             result->setHash(combined_hash);
             result->saveOutputs(args...);
-            setHash(combined_hash, object);
+            setHash(object, combined_hash);
             pushCachedResult(result, fhash, arg_hash);
             setCacheWasUsed(false);
         }
     };
-}
+} // namespace ce

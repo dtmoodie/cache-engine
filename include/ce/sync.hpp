@@ -29,29 +29,38 @@ namespace ce
         std::list<cudaEvent_t> m_pool;
     };
 
-
-    template<>
-    struct OutputParameterHandler<cudaStream_t, void, 9>
+    namespace result_traits
     {
-        static constexpr const bool IS_OUTPUT = true;
-        using result_storage_type = ct::VariadicTypedef<EventPool::EventPtr>;
-
-        template<size_t IDX, class TupleType, class ... Args>
-        static void getOutput(size_t, const TupleType& result, cudaStream_t& stream, Args&& ...)
+        template <class U>
+        struct IsOutput<cudaStream_t, U, void, 9>
         {
-            EventPool::EventPtr ev = std::get<IDX>(result);
-            cudaStreamWaitEvent(stream, ev.get(), 0);
-        }
+            static constexpr const bool value = true;
+        };
 
-        template<size_t IDX, class TupleType, class ... Args>
-        static void saveOutput(size_t, TupleType& result, cudaStream_t& stream, Args&& ...)
+        template <>
+        struct Storage<cudaStream_t, cudaStream_t, 10>
         {
-            if (stream)
+            using type = EventPool::EventPtr;
+
+            template <size_t IDX, class ResultStorage, class... Args>
+            static void saveResult(const size_t hash, ResultStorage& storage, cudaStream_t stream, Args&&... args)
             {
-                EventPool::EventPtr ev = std::get<IDX>(result);
-                cudaEventRecord(ev.get(), stream);
+                if (stream)
+                {
+                    EventPool::EventPtr ev = std::get<IDX>(storage);
+                    cudaEventRecord(ev.get(), stream);
+                }
             }
-        }
-    };
-}
+
+            template <size_t IDX, class ResultStorage, class... Args>
+            static void getResult(const size_t hash, const ResultStorage& storage, cudaStream_t stream, Args&&... args)
+            {
+                EventPool::EventPtr ev = std::get<IDX>(storage);
+                cudaStreamWaitEvent(stream, ev.get(), 0);
+            }
+        };
+
+    } // namespace result_traits
+
+} // namespace ce
 #endif

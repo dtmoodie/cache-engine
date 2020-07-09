@@ -5,214 +5,209 @@
 #include <ce/input.hpp>
 #include <ce/output.hpp>
 #include <ce/shared_ptr.hpp>
+
 #include <ct/hash.hpp>
+#include <ct/static_asserts.hpp>
+#include <ct/type_traits.hpp>
 
 #include <memory>
 #include <tuple>
 
 namespace ce
 {
-    template <class T>
-    using decay_t = typename std::decay<T>::type;
+
+    namespace result_traits
+    {
+        template <class T>
+        using Decay_t = typename std::decay<T>::type;
+
+        template <class T>
+        using RemoveRef_t = typename std::remove_reference<T>;
+
+        template <bool VAL, class U = void>
+        using EnableIf = ct::EnableIf<VAL, U>;
+
+        // This is a template metafunction used for infering if the parameter to a function is in fact an output
+        template <class FArg, class CArg, class E = void, int32_t P = 10>
+        struct IsOutput;
+
+        template <class T, class U>
+        struct IsOutput<T, U, void, 0>
+        {
+            static constexpr const bool value = false;
+        };
+
+        template <class T>
+        T& get(std::shared_ptr<T>& ptr)
+        {
+            if (ptr == nullptr)
+            {
+                ptr = std::make_shared<T>();
+            }
+            return *ptr;
+        }
+
+        template <class T>
+        T& get(T& val)
+        {
+            return val;
+        }
+
+        template <class T>
+        T& get(T* val)
+        {
+            assert(val);
+            return *val;
+        }
+
+        // default implementation
+        template <class T>
+        T deepCopy(T data)
+        {
+            return data;
+        }
+
+        template <class T>
+        std::shared_ptr<T> deepCopy(std::shared_ptr<T> data)
+        {
+            if (data)
+            {
+                return std::make_shared<T>(*data);
+            }
+            return {};
+        }
+
+        template <class T>
+        std::shared_ptr<const T> deepCopy(std::shared_ptr<const T> data)
+        {
+            return data;
+        }
+        struct DefaultStoragePolicy
+        {
+            template <size_t IDX, class T, class ResultStorage, class... Args>
+            static void saveResult(const size_t hash, ResultStorage& storage, T& out, Args&&... args)
+            {
+                std::get<IDX>(storage) = deepCopy(ce::get(out));
+                setHash(out, ct::combineHash(hash, IDX));
+            }
+
+            template <size_t IDX, class T, class ResultStorage, class... Args>
+            static void getResult(const size_t hash, const ResultStorage& storage, T& out, Args&&... args)
+            {
+                get(out) = deepCopy(std::get<IDX>(storage));
+                setHash(out, ct::combineHash(hash, IDX));
+            }
+        };
+
+        template <class T, class U, int Priority = 10>
+        struct Storage : Storage<T, U, Priority - 1>
+        {
+        };
+
+        template <class T, class U>
+        struct Storage<T, U, 0> : DefaultStoragePolicy
+        {
+            using type = Decay_t<T>;
+        };
+
+        template <class T>
+        struct Storage<std::shared_ptr<T>, std::shared_ptr<T>, 1> : DefaultStoragePolicy
+        {
+            using type = T;
+        };
+
+        template <class T>
+        struct Storage<std::shared_ptr<const T>, std::shared_ptr<const T>, 1> : DefaultStoragePolicy
+        {
+            using type = std::shared_ptr<const T>;
+        };
+
+        // If the output to a function is a T*, store the value
+        // U may be a wrapper type and thus we are not specializating on <T*, T*>
+        template <class T>
+        struct Storage<T*, T*, 1> : DefaultStoragePolicy
+        {
+            using type = T;
+        };
+
+        template <class T, class U, class E, int32_t P>
+        struct IsOutput : IsOutput<T, U, E, P - 1>
+        {
+        };
+
+        template <class T>
+        struct DerivedFromHashedInput
+        {
+            static constexpr const bool value = std::is_base_of<HashedInputBase, Decay_t<T>>::value;
+        };
+        template <class T>
+        struct IsConst : std::is_const<T>
+        {
+        };
+
+        // Inputs are not outputs
+        template <class T, class U>
+        struct IsOutput<T, U, EnableIf<(DerivedFromHashedInput<T>::value) || (DerivedFromHashedInput<U>::value)>, 4>
+        {
+            static constexpr const bool value = false;
+        };
+
+        template <class T>
+        struct DerivedFromHashedOutput
+        {
+            static constexpr const bool value = std::is_base_of<HashedOutputBase, Decay_t<T>>::value;
+        };
+
+        template <class T, class U>
+        struct IsOutput<T,
+                        U,
+                        ct::EnableIf<(DerivedFromHashedOutput<T>::value) || (DerivedFromHashedOutput<U>::value)>,
+                        3>
+        {
+            static constexpr const bool value = true;
+        };
+
+        template <class U, class T>
+        struct Storage<U, HashedOutput<T>, 4> : DefaultStoragePolicy
+        {
+            using type = Decay_t<typename Storage<Decay_t<U>, Decay_t<T>>::type>;
+        };
+
+        template <class T>
+        struct DerivedFromHashedBase
+        {
+            static constexpr const bool value = std::is_base_of<HashedBase, Decay_t<T>>::value;
+        };
+
+        // Standalone object inheriting from HashedBase
+        template <class T, class U>
+        struct IsOutput<T,
+                        U,
+                        EnableIf<(DerivedFromHashedBase<T>::value && !IsConst<RemoveRef_t<T>>::value) ||
+                                 (DerivedFromHashedBase<U>::value && !IsConst<RemoveRef_t<U>>::value)>,
+                        1>
+        {
+            static constexpr const bool value = true;
+        };
+
+        template <class T, class U>
+        struct IsOutput<T&, U, EnableIf<!IsConst<T>::value>, 2>
+        {
+            static constexpr const bool value = true;
+        };
+
+        template <class T>
+        void setHash(T&, EnableIf<!DerivedFromHashedBase<T>::value, size_t>)
+        {
+        }
+
+    } // namespace result_traits
 
     template <class F, class T>
-    struct OutputPackImpl;
-
-    template <class T, class E = void, int32_t P = 10, int32_t J = 0>
-    struct OutputParameterHandler;
-
-    template <class T, int32_t J>
-    struct OutputParameterHandler<T, void, 0, J>
-    {
-        static constexpr const bool IS_OUTPUT = false;
-        using result_storage_type = ct::VariadicTypedef<>;
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void getOutput(size_t, const TupleType&, T&, Args&&...)
-        {
-        }
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void saveOutput(size_t, TupleType&, T&, Args&&...)
-        {
-        }
-    };
-
-    template <class T>
-    T deepCopy(T data)
-    {
-        return data;
-    }
-
-    template <class T>
-    std::shared_ptr<T> deepCopy(std::shared_ptr<T> data)
-    {
-        if (data)
-        {
-            return std::make_shared<T>(*data);
-        }
-        return {};
-    }
-
-    template <class T>
-    std::shared_ptr<const T> deepCopy(std::shared_ptr<const T> data)
-    {
-        return data;
-    }
-
-    template <class T, class E, int32_t P, int32_t J>
-    struct OutputParameterHandler : public OutputParameterHandler<T, E, P - 1, J>
-    {
-    };
-
-    template <class T, int32_t J>
-    struct OutputParameterHandler<
-        T,
-        typename std::enable_if<std::is_base_of<HashedInputBase, decay_t<T>>::value && !std::is_const<T>::value>::type,
-        4,
-        J>
-    {
-        static constexpr const bool IS_OUTPUT = false;
-        using result_storage_type = ct::VariadicTypedef<>;
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void getOutput(size_t, const TupleType&, T&, Args&&...)
-        {
-        }
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void saveOutput(size_t, TupleType&, T&, Args&&...)
-        {
-        }
-    };
-
-    template <class T, int32_t J>
-    struct OutputParameterHandler<
-        T,
-        ct::EnableIf<std::is_base_of<HashedOutputBase, decay_t<T>>::value && !std::is_const<T>::value>,
-        2,
-        J>
-    {
-        static constexpr const bool IS_OUTPUT = true;
-        using result_storage_type = ct::VariadicTypedef<typename decay_t<T>::type>;
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void getOutput(size_t hash, const TupleType& result, T& out, Args&&...)
-        {
-            ce::get(out) = deepCopy(ce::get(std::get<IDX>(result)));
-            out.setHash(ct::combineHash(hash, IDX));
-        }
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void saveOutput(size_t hash, TupleType& result, T& out, Args&&...)
-        {
-            std::get<IDX>(result) = deepCopy(ce::get(out));
-            out.setHash(ct::combineHash(hash, IDX));
-        }
-    };
-
-    // Standalone object inheriting from HashedBase
-    template <class T, int32_t J>
-    struct OutputParameterHandler<T,
-                                  ct::EnableIf<std::is_base_of<HashedBase, decay_t<T>>::value &&
-                                               !std::is_const<typename std::remove_reference<T>::type>::value>,
-                                  1,
-                                  J>
-    {
-        static constexpr const bool IS_OUTPUT = true;
-        using result_storage_type = ct::VariadicTypedef<decay_t<T>>;
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void getOutput(size_t, const TupleType& result, T& out, Args&&...)
-        {
-            out = deepCopy(std::get<IDX>(result));
-        }
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void saveOutput(size_t hash, TupleType& result, T& out, Args&&...)
-        {
-            if (out.hash() == 0)
-            {
-                out.setHash(ct::combineHash(hash, IDX));
-            }
-            std::get<IDX>(result) = out;
-        }
-    };
-
-    template <class T, int32_t J>
-    struct OutputParameterHandler<
-        T,
-        ct::EnableIf<std::is_base_of<HashedOutputBase, decay_t<T>>::value && !std::is_const<T>::value &&
-                     std::is_pointer<typename decay_t<T>::type>::value>,
-        3,
-        J>
-    {
-        static constexpr const bool IS_OUTPUT = true;
-        using result_storage_type = ct::VariadicTypedef<typename std::remove_pointer<typename decay_t<T>::type>::type>;
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void getOutput(size_t hash, const TupleType& result, T& out, Args&&...)
-        {
-            *out.data = deepCopy(ce::get(std::get<IDX>(result)));
-            out.setHash(ct::combineHash(hash, IDX));
-        }
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void saveOutput(size_t hash, TupleType& result, T& out, Args&&...)
-        {
-            out.setHash(ct::combineHash(hash, IDX));
-            std::get<IDX>(result) = deepCopy(*ce::get(out));
-        }
-    };
-
-    template <class T, int32_t J>
-    struct OutputParameterHandler<std::shared_ptr<T>,
-                                  typename std::enable_if<std::is_base_of<HashedBase, T>::value>::type,
-                                  2,
-                                  J>
-    {
-        static constexpr const bool IS_OUTPUT = true;
-        using result_storage_type = ct::VariadicTypedef<shared_ptr<const decay_t<T>>>;
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void getOutput(size_t hash, const TupleType& result, std::shared_ptr<T>& out, Args&&...)
-        {
-            ce::get(out) = deepCopy(std::get<IDX>(result));
-            out->setHash(ct::combineHash(hash, IDX));
-        }
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void saveOutput(size_t hash, TupleType& result, std::shared_ptr<T>& out, Args&&...)
-        {
-            std::get<IDX>(result) = deepCopy(ce::get(out));
-            out->setHash(ct::combineHash(hash, IDX));
-        }
-    };
-
-    template <class T>
-    struct OutputParameterHandler<std::shared_ptr<const T>,
-                                  typename std::enable_if<std::is_base_of<HashedBase, T>::value>::type,
-                                  3,
-                                  0>
-    {
-        static constexpr const bool IS_OUTPUT = true;
-        using result_storage_type = ct::VariadicTypedef<shared_ptr<const T>>;
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void getOutput(size_t, const TupleType& result, std::shared_ptr<const T>& out, Args&&...)
-        {
-            ce::get(out) = std::get<IDX>(result);
-        }
-
-        template <size_t IDX, class TupleType, class... Args>
-        static void saveOutput(size_t, TupleType& result, std::shared_ptr<const T>& out, Args&&...)
-        {
-            std::get<IDX>(result) = ce::get(out);
-        }
-    };
+    struct FunctionArgumentRecurse;
 
     template <>
-    struct OutputPackImpl<ct::VariadicTypedef<>, ct::VariadicTypedef<>>
+    struct FunctionArgumentRecurse<ct::VariadicTypedef<>, ct::VariadicTypedef<>>
     {
         static constexpr const size_t OUTPUT_COUNT = 0;
         using result_storage_types = ct::VariadicTypedef<>;
@@ -228,76 +223,141 @@ namespace ce
         }
     };
 
-    template <class F, class T>
-    struct OutputPackImpl<ct::VariadicTypedef<F>, ct::VariadicTypedef<T>>
+    template <class FunctionArg,
+              class CallsiteArg,
+              bool IS_OUTPUT = result_traits::IsOutput<FunctionArg, CallsiteArg>::value>
+    struct ResultStorage
     {
-        static constexpr const size_t OUTPUT_COUNT = (OutputParameterHandler<T>::IS_OUTPUT ? 1 : 0);
-        using result_storage_types = typename OutputParameterHandler<T>::result_storage_type;
+        using type = ct::VariadicTypedef<>;
 
-        template <class TupleType>
-        static void getOutputs(size_t hash, TupleType& result, T& out)
+        template <size_t IDX, class TupleType, class... Args>
+        static void getOutput(size_t hash, TupleType& result, CallsiteArg& out, Args&&... args)
         {
-            OutputParameterHandler<T>::template getOutput<std::tuple_size<TupleType>::value - 1>(hash, result, out);
         }
 
-        template <class TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, T& out)
+        template <size_t IDX, class TupleType, class... Args>
+        static void saveOutput(size_t hash, TupleType& result, CallsiteArg& out, Args&&... args)
         {
-            OutputParameterHandler<T>::template saveOutput<std::tuple_size<TupleType>::value - 1>(hash, result, out);
+        }
+    };
+
+    template <class FunctionArg, class CallsiteArg>
+    struct ResultStorage<FunctionArg, CallsiteArg, true>
+    {
+        using FArg = result_traits::Decay_t<FunctionArg>;
+        using CArg = result_traits::Decay_t<CallsiteArg>;
+        using StoragePolicy = result_traits::Storage<FArg, CArg>;
+
+        using type = ct::VariadicTypedef<typename StoragePolicy::type>;
+
+        template <size_t IDX, class TupleType, class... Args>
+        static void getOutput(size_t hash, TupleType& result, CallsiteArg& out, Args&&... args)
+        {
+            StoragePolicy::template getResult<IDX>(hash, result, out, std::forward<Args>(args)...);
+        }
+
+        template <size_t IDX, class TupleType, class... Args>
+        static void saveOutput(size_t hash, TupleType& result, CallsiteArg& out, Args&&... args)
+        {
+            StoragePolicy::template saveResult<IDX>(hash, result, out, std::forward<Args>(args)...);
+        }
+    };
+
+    template <class F, class T>
+    struct FunctionArgumentRecurse<ct::VariadicTypedef<F>, ct::VariadicTypedef<T>>
+    {
+        static constexpr const size_t OUTPUT_COUNT = (result_traits::IsOutput<F, T>::value ? 1 : 0);
+        using result_storage_types = typename ResultStorage<F, T>::type;
+
+        // U ~= T
+        template <class TupleType, class U>
+        static void getOutputs(size_t hash, TupleType& result, U&& out)
+        {
+            constexpr size_t tuple_size = std::tuple_size<TupleType>::value;
+            constexpr size_t idx = tuple_size - 1;
+            ResultStorage<F, T>::template getOutput<idx>(hash, result, out);
+        }
+
+        // U ~= T
+        template <class TupleType, class U>
+        static void saveOutputs(size_t hash, TupleType& result, U&& out)
+        {
+            constexpr size_t tuple_size = std::tuple_size<TupleType>::value;
+            constexpr size_t idx = tuple_size - 1;
+            ResultStorage<F, T>::template saveOutput<idx>(hash, result, out);
         }
     };
 
     template <class F, class T, class... FARGS, class... ARGS>
-    struct OutputPackImpl<ct::VariadicTypedef<F, FARGS...>, ct::VariadicTypedef<T, ARGS...>>
+    struct FunctionArgumentRecurse<ct::VariadicTypedef<F, FARGS...>, ct::VariadicTypedef<T, ARGS...>>
     {
-        using Super = OutputPackImpl<ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>>;
+        using Super = FunctionArgumentRecurse<ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>>;
 
         static constexpr const size_t OUTPUT_COUNT =
-            Super::OUTPUT_COUNT + (OutputParameterHandler<T>::IS_OUTPUT ? 1 : 0);
-        using storage_type = typename OutputParameterHandler<T>::result_storage_type;
-        using result_storage_types = typename ct::Append<storage_type, typename Super::result_storage_types>::type;
+            Super::OUTPUT_COUNT + (result_traits::IsOutput<F, T>::value ? 1 : 0);
 
-        template <class TupleType>
-        static void getOutputs(size_t hash, TupleType& result, T& out, ARGS&... args)
+        using storage_type = typename ResultStorage<F, T>::type;
+        using super_storage_types = typename Super::result_storage_types;
+        using result_storage_types = ct::append<storage_type, super_storage_types>;
+
+        // U ~= T
+        template <class TupleType, class U, class... Args>
+        static void getOutputs(size_t hash, TupleType& result, U&& out, Args&&... args)
         {
             constexpr const size_t OUTPUT_COUNT = Super::OUTPUT_COUNT;
             constexpr const size_t IDX = std::tuple_size<TupleType>::value - OUTPUT_COUNT - 1;
-            OutputParameterHandler<T>::template getOutput<IDX>(hash, result, out, args...);
-            Super::getOutputs(hash, result, args...);
+
+            ResultStorage<F, T>::template getOutput<IDX>(hash, result, out, std::forward<Args>(args)...);
+            Super::getOutputs(hash, result, std::forward<Args>(args)...);
         }
 
-        template <class TupleType>
-        static void saveOutputs(size_t hash, TupleType& result, T& out, ARGS&... args)
+        template <class TupleType, class U, class... Args>
+        static void saveOutputs(size_t hash, TupleType& result, U&& out, Args&&... args)
         {
             constexpr const size_t OUTPUT_COUNT = Super::OUTPUT_COUNT;
             constexpr const size_t IDX = std::tuple_size<TupleType>::value - OUTPUT_COUNT - 1;
-            OutputParameterHandler<T>::template saveOutput<IDX>(hash, result, out, args...);
-            Super::saveOutputs(hash, result, args...);
+
+            ResultStorage<F, T>::template saveOutput<IDX>(hash, result, out, std::forward<Args>(args)...);
+            Super::saveOutputs(hash, result, std::forward<Args>(args)...);
         }
     };
 
+    // Output pack is a structure for storing the output of a computation
+    // It is templated on the return type of a function, the arguments to the function and the arguments passed into the
+    // function The return type is used for the void specialization since with a void returning function, we must pass
+    // in the result of the function Function args can be used to infer if an input to a function is an input or an
+    // output Furthermore so can the arguments passed into the function IE a function can be declared as such: void
+    // foo(ce::Output<T>, params...); or it can be used as such: void foo(T, params...); cache->exec(&foo,
+    // ce::makeOutput(), params...); Thus you can wrap external functions easily without having to decorate
     template <class R, class FARGS, class ARGS>
     struct OutputPack;
 
     template <class R, class... FARGS, class... ARGS>
     struct OutputPack<R, ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>> : IResult
     {
-        using Super = OutputPackImpl<ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>>;
-        typename ct::Append<typename OutputParameterHandler<R>::result_storage_type,
-                            typename Super::result_storage_types>::type::tuple_type values;
+        using function_args = ct::VariadicTypedef<FARGS...>;
+        using callsite_args = ct::VariadicTypedef<ARGS...>;
+        using Super = FunctionArgumentRecurse<function_args, callsite_args>;
+
+        using return_storage_type = typename ResultStorage<R, R>::type;
+        using argument_storage_type = typename Super::result_storage_types;
+        using storage_type = typename ct::append<return_storage_type, argument_storage_type>::tuple_type;
+
+        storage_type values;
+
         static constexpr const size_t OUTPUT_COUNT = Super::OUTPUT_COUNT + 1;
 
         void saveOutputs(R& ret, ARGS&... args)
         {
             const auto hsh = hash();
-            OutputParameterHandler<R>::template saveOutput<0>(hsh, values, ret);
+            ResultStorage<R, R>::template saveOutput<0>(hsh, values, ret);
             Super::saveOutputs(hsh, values, args...);
         }
 
         void getOutputs(R& ret, ARGS&... args)
         {
             const auto hsh = hash();
-            OutputParameterHandler<R>::template getOutput<0>(hsh, values, ret);
+            ResultStorage<R, R>::template getOutput<0>(hsh, values, ret);
             Super::getOutputs(hsh, values, args...);
         }
     };
@@ -305,18 +365,28 @@ namespace ce
     template <class... FARGS, class... ARGS>
     struct OutputPack<void, ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>> : IResult
     {
-        using Super = OutputPackImpl<ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>>;
-        typename Super::result_storage_types::tuple_type values;
+        using function_args = ct::VariadicTypedef<FARGS...>;
+        using callsite_args = ct::VariadicTypedef<ARGS...>;
+        using Super = FunctionArgumentRecurse<function_args, callsite_args>;
+        using argument_storage_type = typename Super::result_storage_types;
+        using storage_type = typename argument_storage_type::tuple_type;
+
+        storage_type values;
+
         static constexpr const size_t OUTPUT_COUNT = Super::OUTPUT_COUNT;
 
-        void saveOutputs(ARGS&... args)
+        template <class... Args>
+        void saveOutputs(Args&&... args)
         {
-            Super::saveOutputs(hash(), values, args...);
+            const auto hsh = hash();
+            Super::saveOutputs(hsh, values, std::forward<Args>(args)...);
         }
 
-        void getOutputs(ARGS&... args)
+        template <class... Args>
+        void getOutputs(Args&&... args)
         {
-            Super::getOutputs(hash(), values, args...);
+            const auto hsh = hash();
+            Super::getOutputs(hsh, values, std::forward<Args>(args)...);
         }
     };
-}
+} // namespace ce

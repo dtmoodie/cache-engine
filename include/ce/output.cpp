@@ -3,7 +3,7 @@
 namespace ce
 {
 
-    void setHash(size_t hash, HashedBase& obj)
+    void setHash(HashedBase& obj, size_t hash)
     {
         obj.setHash(hash);
     }
@@ -17,4 +17,4 @@ namespace ce
     {
         m_hash = val;
     }
-}
+} // namespace ce

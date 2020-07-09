@@ -89,26 +89,36 @@ namespace ce
         T* obj;
     };
 
-    template <class T>
-    struct OutputParameterHandler<HashWrapper<T>, void, 4>
+    namespace result_traits
     {
-        static constexpr const bool IS_OUTPUT = false;
-        using result_storage_type = ct::VariadicTypedef<T>;
+        template <class T, class U>
+        struct IsOutput<HashWrapper<T>, U, void, 4>
+        {
+            static constexpr const bool value = false;
+            using result_storage_type = ct::VariadicTypedef<T>;
+        };
 
-        template <size_t IDX, class TupleType, class... Args>
-        static void getOutput(size_t hash, const TupleType& result, HashWrapper<T>& out, Args&&...)
+        template <class U, class T>
+        struct Storage<U, HashWrapper<T>>
+        {
+            using type = ct::VariadicTypedef<T>;
+        };
+
+        template <size_t IDX, class T, class TupleType, class... Args>
+        void getResult(size_t hash, const TupleType& result, HashWrapper<T>& out, Args&&...)
         {
             ce::get(out) = deepCopy(std::get<IDX>(result));
             out.setHash(ct::combineHash(hash, IDX));
         }
 
-        template <size_t IDX, class TupleType, class... Args>
-        static void saveOutput(size_t hash, TupleType& result, HashWrapper<T>& out, Args&&...)
+        template <size_t IDX, class T, class TupleType, class... Args>
+        void saveResult(size_t hash, TupleType& result, HashWrapper<T>& out, Args&&...)
         {
             std::get<IDX>(result) = deepCopy(ce::get(out));
             out.setHash(ct::combineHash(hash, IDX));
         }
-    };
+
+    } // namespace result_traits
 
     template <class T>
     T& get(HashWrapper<T>& v)
@@ -175,4 +185,4 @@ namespace ce
     {
         return r;
     }
-}
+} // namespace ce

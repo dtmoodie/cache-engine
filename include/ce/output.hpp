@@ -16,7 +16,7 @@ namespace ce
         size_t m_hash = 0;
     };
 
-    void setHash(size_t, HashedBase&);
+    void setHash(HashedBase&, size_t);
 
     struct HashedOutputBase : HashedBase
     {
@@ -35,9 +35,16 @@ namespace ce
         {
             return data;
         }
+
         operator const T&() const
         {
             return data;
+        }
+
+        template <class U>
+        operator U()
+        {
+            return U(data);
         }
 
         T data;
@@ -57,9 +64,16 @@ namespace ce
         {
             return data;
         }
+
         operator const T&() const
         {
             return data;
+        }
+
+        template <class U>
+        operator U()
+        {
+            return U(data);
         }
 
         T& data;
@@ -132,9 +146,10 @@ namespace ce
     }
 
     template <class T>
-    T* get(HashedOutput<T*> data)
+    T& get(HashedOutput<T*> data)
     {
-        return data.data;
+        assert(data.data);
+        return *data.data;
     }
 
     template <class T>
