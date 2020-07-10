@@ -53,13 +53,17 @@ namespace ce
         /////////////////////////////////////////////////////////////////////////////
         // Static functions
         /////////////////////////////////////////////////////////////////////////////
-
         template <class R, class... FArgs, class... Args>
-        std::shared_ptr<OutputPack<ReturnSelect<R>, ct::VariadicTypedef<FArgs...>, ct::VariadicTypedef<Args...>>>
-        getCachedResult(size_t& fhash, size_t& arg_hash, R (*func)(FArgs...), Args&&... args)
+        void calcHash(size_t& fhash, size_t& arg_hash, R (*func)(FArgs...), Args&&... args)
         {
             fhash = generateHash(func);
             arg_hash = generateHash(std::forward<Args>(args)...);
+        }
+
+        template <class R, class... FArgs, class... Args>
+        std::shared_ptr<OutputPack<ReturnSelect<R>, ct::VariadicTypedef<FArgs...>, ct::VariadicTypedef<Args...>>>
+        getCachedResult(const size_t fhash, const size_t arg_hash, R (*func)(FArgs...), Args&&... args)
+        {
             std::shared_ptr<IResult> result = getCachedResult(fhash, arg_hash);
             if (result)
             {
@@ -73,11 +77,14 @@ namespace ce
         template <class... FArgs, class... Args>
         void exec(void (*func)(FArgs...), Args&&... args)
         {
-            static_assert(OutputPack<void, ct::VariadicTypedef<FArgs...>, ct::VariadicTypedef<Args...>>::OUTPUT_COUNT !=
-                              0,
-                          "Ouput must be passed in");
+            using FunctionArgs = ct::VariadicTypedef<FArgs...>;
+            using CallsiteArgs = ct::VariadicTypedef<Args...>;
+            using OutputPack_t = OutputPack<void, FunctionArgs, CallsiteArgs>;
+            static_assert(OutputPack_t::OUTPUT_COUNT != 0, "Ouput must be passed in");
+
             size_t fhash, arg_hash;
-            auto tresult = getCachedResult(fhash, arg_hash, func, args...);
+            calcHash(fhash, arg_hash, func, std::forward<Args>(args)...);
+            auto tresult = getCachedResult(fhash, arg_hash, func, std::forward<Args>(args)...);
             if (tresult)
             {
                 tresult->getOutputs(args...);
@@ -99,6 +106,7 @@ namespace ce
         ReturnSelect<R> exec(R (*func)(FArgs...), Args&&... args)
         {
             size_t fhash, arg_hash;
+            calcHash(fhash, arg_hash, func, std::forward<Args>(args)...);
             auto tresult = getCachedResult(fhash, arg_hash, func, std::forward<Args>(args)...);
             ReturnSelect<R> ret;
             if (tresult)
@@ -120,10 +128,8 @@ namespace ce
         ///////////////////////////////////////////////////////////////////////////
         /// Member functions
         ///////////////////////////////////////////////////////////////////////////
-
         template <class T, class U, class R, class... FARGS, class... ARGS>
-        std::shared_ptr<OutputPack<ReturnSelect<R>, ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>>>
-        getCachedResult(size_t& fhash, size_t& arg_hash, R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
+        void calcHash(size_t& fhash, size_t& arg_hash, R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
         {
             fhash = memberFunctionPointerValue(func);
             if (this->printDebug())
@@ -134,7 +140,12 @@ namespace ce
             {
                 arg_hash = generateHash(obj, std::forward<ARGS>(args)...);
             }
-
+        }
+        template <class T, class U, class R, class... FARGS, class... ARGS>
+        std::shared_ptr<OutputPack<ReturnSelect<R>, ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>>>
+        getCachedResult(
+            const size_t fhash, const size_t arg_hash, R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
+        {
             auto result = getCachedResult(fhash, arg_hash);
             if (result)
             {
@@ -149,6 +160,7 @@ namespace ce
         ReturnSelect<R> exec(R (T::*func)(FARGS...) const, const U& obj, ARGS&&... args)
         {
             size_t fhash, arg_hash;
+            calcHash(fhash, arg_hash, func, obj, std::forward<ARGS>(args)...);
             auto result = getCachedResult(fhash, arg_hash, func, obj, std::forward<ARGS>(args)...);
             ReturnSelect<R> ret;
             if (result)
@@ -177,6 +189,7 @@ namespace ce
                 "for a void returning const function, there must be some kind of output passed in as an argument");
 
             size_t fhash, arg_hash;
+            calcHash(fhash, arg_hash, func, object, std::forward<ARGS>(args)...);
             auto result = getCachedResult(fhash, arg_hash, func, object, std::forward<ARGS>(args)...);
             if (result)
             {
@@ -195,8 +208,7 @@ namespace ce
         }
 
         template <class T, class U, class... FARGS, class... ARGS>
-        std::shared_ptr<OutputPack<void, ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>>>
-        getCachedResult(size_t& fhash, size_t& arghash, void (T::*func)(FARGS...), U& object, ARGS&&... args)
+        void calcHash(size_t& fhash, size_t& arghash, void (T::*func)(FARGS...), U& object, ARGS&&... args)
         {
             fhash = memberFunctionPointerValue(func);
             if (this->printDebug())
@@ -207,7 +219,12 @@ namespace ce
             {
                 arghash = generateHash(object, std::forward<ARGS>(args)...);
             }
-            // arghash = generateHash(generateHash(object), std::forward<ARGS>(args)...);
+        }
+
+        template <class T, class U, class... FARGS, class... ARGS>
+        std::shared_ptr<OutputPack<void, ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>>>
+        getCachedResult(const size_t fhash, const size_t arghash, void (T::*func)(FARGS...), U& object, ARGS&&... args)
+        {
             auto result = getCachedResult(fhash, arghash);
             if (result)
             {
@@ -222,6 +239,7 @@ namespace ce
         void exec(void (T::*func)(FARGS...), U& object, ARGS&&... args)
         {
             size_t fhash, arg_hash;
+            calcHash(fhash, arg_hash, func, object, std::forward<ARGS>(args)...);
             auto result = getCachedResult(fhash, arg_hash, func, object, std::forward<ARGS>(args)...);
             auto& obj = get(object);
             if (result)

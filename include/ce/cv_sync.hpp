@@ -50,13 +50,13 @@ namespace ce
         };
 
         template <>
-        struct Storage<cv::_OutputArray, cv::cuda::GpuMat, 10> : DefaultStoragePolicy
+        struct Storage<cv::_OutputArray, cv::cuda::GpuMat, void, 10> : DefaultStoragePolicy
         {
             using type = cv::cuda::GpuMat;
         };
 
         template <>
-        struct Storage<cv::cuda::Stream, cv::cuda::Stream, 10>
+        struct Storage<cv::cuda::Stream, cv::cuda::Stream, void, 10>
         {
             using type = CvEventPool::EventPtr;
 

@@ -38,7 +38,7 @@ namespace ce
         };
 
         template <>
-        struct Storage<cudaStream_t, cudaStream_t, 10>
+        struct Storage<cudaStream_t, cudaStream_t, void, 10>
         {
             using type = EventPool::EventPtr;
 

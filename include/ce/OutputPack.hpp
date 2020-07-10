@@ -99,25 +99,25 @@ namespace ce
             }
         };
 
-        template <class T, class U, int Priority = 10>
-        struct Storage : Storage<T, U, Priority - 1>
+        template <class T, class U, class Enable = void, int Priority = 10>
+        struct Storage : Storage<T, U, void, Priority - 1>
         {
         };
 
         template <class T, class U>
-        struct Storage<T, U, 0> : DefaultStoragePolicy
+        struct Storage<T, U, void, 0> : DefaultStoragePolicy
         {
             using type = Decay_t<T>;
         };
 
         template <class T>
-        struct Storage<std::shared_ptr<T>, std::shared_ptr<T>, 1> : DefaultStoragePolicy
+        struct Storage<std::shared_ptr<T>, std::shared_ptr<T>, void, 1> : DefaultStoragePolicy
         {
             using type = T;
         };
 
         template <class T>
-        struct Storage<std::shared_ptr<const T>, std::shared_ptr<const T>, 1>
+        struct Storage<std::shared_ptr<const T>, std::shared_ptr<const T>, void, 1>
         {
             using type = std::shared_ptr<const T>;
 
@@ -147,7 +147,7 @@ namespace ce
         // If the output to a function is a T*, store the value
         // U may be a wrapper type and thus we are not specializating on <T*, T*>
         template <class T>
-        struct Storage<T*, T*, 1> : DefaultStoragePolicy
+        struct Storage<T*, T*, void, 1> : DefaultStoragePolicy
         {
             using type = T;
         };
@@ -190,7 +190,7 @@ namespace ce
         };
 
         template <class U, class T>
-        struct Storage<U, HashedOutput<T>, 4> : DefaultStoragePolicy
+        struct Storage<U, HashedOutput<T>, void, 4> : DefaultStoragePolicy
         {
             using type = Decay_t<typename Storage<Decay_t<U>, Decay_t<T>>::type>;
         };
@@ -199,6 +199,27 @@ namespace ce
         struct DerivedFromHashedBase
         {
             static constexpr const bool value = std::is_base_of<HashedBase, Decay_t<T>>::value;
+        };
+
+        // Specialization for a hashable output wrapped in a HashedOutput
+        template <class U, class T>
+        struct Storage<U, HashedOutput<T>, EnableIf<DerivedFromHashedBase<T>::value>, 5>
+        {
+            using type = Decay_t<typename Storage<Decay_t<U>, Decay_t<T>>::type>;
+
+            template <size_t IDX, class ResultStorage, class... Args>
+            static void saveResult(const size_t hash, ResultStorage& storage, HashedOutput<T>& out, Args&&... args)
+            {
+                std::get<IDX>(storage) = deepCopy(ce::get(out));
+                setHash(static_cast<T&>(out), ct::combineHash(hash, IDX));
+            }
+
+            template <size_t IDX, class ResultStorage, class... Args>
+            static void getResult(const size_t hash, const ResultStorage& storage, HashedOutput<T>& out, Args&&... args)
+            {
+                get(out) = deepCopy(std::get<IDX>(storage));
+                setHash(static_cast<T&>(out), ct::combineHash(hash, IDX));
+            }
         };
 
         // Standalone object inheriting from HashedBase
@@ -234,12 +255,12 @@ namespace ce
         static constexpr const size_t OUTPUT_COUNT = 0;
         using result_storage_types = ct::VariadicTypedef<>;
 
-        template <class TupleType>
+        template <size_t IDX, class TupleType>
         static void getOutputs(size_t, TupleType&)
         {
         }
 
-        template <class TupleType>
+        template <size_t IDX, class TupleType>
         static void saveOutputs(size_t, TupleType&)
         {
         }
@@ -275,6 +296,8 @@ namespace ce
         template <size_t IDX, class TupleType, class... Args>
         static void getOutput(size_t hash, TupleType& result, CallsiteArg& out, Args&&... args)
         {
+            constexpr size_t TUPLE_SIZE = std::tuple_size<TupleType>::value;
+            ct::StaticGreater<size_t, TUPLE_SIZE, IDX>{};
             StoragePolicy::template getResult<IDX>(hash, result, out, std::forward<Args>(args)...);
         }
 
@@ -288,25 +311,22 @@ namespace ce
     template <class F, class T>
     struct FunctionArgumentRecurse<ct::VariadicTypedef<F>, ct::VariadicTypedef<T>>
     {
-        static constexpr const size_t OUTPUT_COUNT = (result_traits::IsOutput<F, T>::value ? 1 : 0);
+        static constexpr const bool IS_OUTPUT = result_traits::IsOutput<F, T>::value;
+        static constexpr const size_t OUTPUT_COUNT = (IS_OUTPUT ? 1 : 0);
         using result_storage_types = typename ResultStorage<F, T>::type;
 
         // U ~= T
-        template <class TupleType, class U>
+        template <size_t IDX, class TupleType, class U>
         static void getOutputs(size_t hash, TupleType& result, U&& out)
         {
-            constexpr size_t tuple_size = std::tuple_size<TupleType>::value;
-            constexpr size_t idx = tuple_size - 1;
-            ResultStorage<F, T>::template getOutput<idx>(hash, result, out);
+            ResultStorage<F, T>::template getOutput<IDX>(hash, result, out);
         }
 
         // U ~= T
-        template <class TupleType, class U>
+        template <size_t IDX, class TupleType, class U>
         static void saveOutputs(size_t hash, TupleType& result, U&& out)
         {
-            constexpr size_t tuple_size = std::tuple_size<TupleType>::value;
-            constexpr size_t idx = tuple_size - 1;
-            ResultStorage<F, T>::template saveOutput<idx>(hash, result, out);
+            ResultStorage<F, T>::template saveOutput<IDX>(hash, result, out);
         }
     };
 
@@ -315,32 +335,28 @@ namespace ce
     {
         using Super = FunctionArgumentRecurse<ct::VariadicTypedef<FARGS...>, ct::VariadicTypedef<ARGS...>>;
 
-        static constexpr const size_t OUTPUT_COUNT =
-            Super::OUTPUT_COUNT + (result_traits::IsOutput<F, T>::value ? 1 : 0);
+        static constexpr const bool IS_OUTPUT = result_traits::IsOutput<F, T>::value;
+        static constexpr const size_t OUTPUT_COUNT = Super::OUTPUT_COUNT + (IS_OUTPUT ? 1 : 0);
 
         using storage_type = typename ResultStorage<F, T>::type;
         using super_storage_types = typename Super::result_storage_types;
         using result_storage_types = ct::append<storage_type, super_storage_types>;
 
         // U ~= T
-        template <class TupleType, class U, class... Args>
+        template <size_t IDX, class TupleType, class U, class... Args>
         static void getOutputs(size_t hash, TupleType& result, U&& out, Args&&... args)
         {
-            constexpr const size_t OUTPUT_COUNT = Super::OUTPUT_COUNT;
-            constexpr const size_t IDX = std::tuple_size<TupleType>::value - OUTPUT_COUNT - 1;
-
+            static constexpr const size_t NEXT_IDX = IDX + (IS_OUTPUT ? 1 : 0);
             ResultStorage<F, T>::template getOutput<IDX>(hash, result, out, std::forward<Args>(args)...);
-            Super::getOutputs(hash, result, std::forward<Args>(args)...);
+            Super::template getOutputs<NEXT_IDX>(hash, result, std::forward<Args>(args)...);
         }
 
-        template <class TupleType, class U, class... Args>
+        template <size_t IDX, class TupleType, class U, class... Args>
         static void saveOutputs(size_t hash, TupleType& result, U&& out, Args&&... args)
         {
-            constexpr const size_t OUTPUT_COUNT = Super::OUTPUT_COUNT;
-            constexpr const size_t IDX = std::tuple_size<TupleType>::value - OUTPUT_COUNT - 1;
-
+            static constexpr const size_t NEXT_IDX = IDX + (IS_OUTPUT ? 1 : 0);
             ResultStorage<F, T>::template saveOutput<IDX>(hash, result, out, std::forward<Args>(args)...);
-            Super::saveOutputs(hash, result, std::forward<Args>(args)...);
+            Super::template saveOutputs<NEXT_IDX>(hash, result, std::forward<Args>(args)...);
         }
     };
 
@@ -373,14 +389,14 @@ namespace ce
         {
             const auto hsh = hash();
             ResultStorage<R, R, true>::template saveOutput<0>(hsh, values, ret);
-            Super::saveOutputs(hsh, values, args...);
+            Super::template saveOutputs<1>(hsh, values, args...);
         }
 
         void getOutputs(R& ret, ARGS&... args)
         {
             const auto hsh = hash();
             ResultStorage<R, R, true>::template getOutput<0>(hsh, values, ret);
-            Super::getOutputs(hsh, values, args...);
+            Super::template getOutputs<1>(hsh, values, args...);
         }
     };
 
@@ -401,14 +417,14 @@ namespace ce
         void saveOutputs(Args&&... args)
         {
             const auto hsh = hash();
-            Super::saveOutputs(hsh, values, std::forward<Args>(args)...);
+            Super::template saveOutputs<0>(hsh, values, std::forward<Args>(args)...);
         }
 
         template <class... Args>
         void getOutputs(Args&&... args)
         {
             const auto hsh = hash();
-            Super::getOutputs(hsh, values, std::forward<Args>(args)...);
+            Super::template getOutputs<0>(hsh, values, std::forward<Args>(args)...);
         }
     };
 } // namespace ce
