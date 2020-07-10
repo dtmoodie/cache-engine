@@ -22,7 +22,7 @@ namespace ce
         using Decay_t = typename std::decay<T>::type;
 
         template <class T>
-        using RemoveRef_t = typename std::remove_reference<T>;
+        using RemoveRef_t = typename std::remove_reference<T>::type;
 
         template <bool VAL, class U = void>
         using EnableIf = ct::EnableIf<VAL, U>;
@@ -117,9 +117,31 @@ namespace ce
         };
 
         template <class T>
-        struct Storage<std::shared_ptr<const T>, std::shared_ptr<const T>, 1> : DefaultStoragePolicy
+        struct Storage<std::shared_ptr<const T>, std::shared_ptr<const T>, 1>
         {
             using type = std::shared_ptr<const T>;
+
+            template <size_t IDX, class ResultStorage, class... Args>
+            static void
+            saveResult(const size_t hash, ResultStorage& storage, std::shared_ptr<const T>& out, Args&&... args)
+            {
+                std::get<IDX>(storage) = deepCopy(ce::get(out));
+                /*if (out)
+                {
+                    setHash(*out, ct::combineHash(hash, IDX));
+                }*/
+            }
+
+            template <size_t IDX, class ResultStorage, class... Args>
+            static void
+            getResult(const size_t hash, const ResultStorage& storage, std::shared_ptr<const T>& out, Args&&... args)
+            {
+                out = deepCopy(std::get<IDX>(storage));
+                /*if (out)
+                {
+                    setHash(*out, ct::combineHash(hash, IDX));
+                }*/
+            }
         };
 
         // If the output to a function is a T*, store the value
@@ -339,7 +361,7 @@ namespace ce
         using callsite_args = ct::VariadicTypedef<ARGS...>;
         using Super = FunctionArgumentRecurse<function_args, callsite_args>;
 
-        using return_storage_type = typename ResultStorage<R, R>::type;
+        using return_storage_type = typename ResultStorage<R, R, true>::type;
         using argument_storage_type = typename Super::result_storage_types;
         using storage_type = typename ct::append<return_storage_type, argument_storage_type>::tuple_type;
 
@@ -350,14 +372,14 @@ namespace ce
         void saveOutputs(R& ret, ARGS&... args)
         {
             const auto hsh = hash();
-            ResultStorage<R, R>::template saveOutput<0>(hsh, values, ret);
+            ResultStorage<R, R, true>::template saveOutput<0>(hsh, values, ret);
             Super::saveOutputs(hsh, values, args...);
         }
 
         void getOutputs(R& ret, ARGS&... args)
         {
             const auto hsh = hash();
-            ResultStorage<R, R>::template getOutput<0>(hsh, values, ret);
+            ResultStorage<R, R, true>::template getOutput<0>(hsh, values, ret);
             Super::getOutputs(hsh, values, args...);
         }
     };
