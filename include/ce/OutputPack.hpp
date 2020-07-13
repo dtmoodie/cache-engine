@@ -218,7 +218,10 @@ namespace ce
             static void getResult(const size_t hash, const ResultStorage& storage, HashedOutput<T>& out, Args&&... args)
             {
                 get(out) = deepCopy(std::get<IDX>(storage));
-                setHash(static_cast<T&>(out), ct::combineHash(hash, IDX));
+                if (static_cast<T&>(out).hash() == 0)
+                {
+                    setHash(static_cast<T&>(out), ct::combineHash(hash, IDX));
+                }
             }
         };
 
