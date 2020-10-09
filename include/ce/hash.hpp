@@ -15,6 +15,8 @@ namespace ce
     template <class T>
     inline size_t generateHash(const T& data);
 
+    inline size_t generateHash(const void*);
+
     template <class T>
     inline size_t generateHash(T&& data);
 
@@ -56,6 +58,11 @@ namespace ce
     {
         static std::atomic<size_t> count{0};
         return ++count;
+    }
+
+    inline size_t generateHash(const void* ptr)
+    {
+        return reinterpret_cast<size_t>(ptr);
     }
 
     template <class T, class E = void, int I = 10>
