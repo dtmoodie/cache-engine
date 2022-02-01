@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 CMAKE_POLICY(SET CMP0048 NEW)
 project(cache-engine 
     VERSION 1.0.0
