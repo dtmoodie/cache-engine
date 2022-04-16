@@ -7,6 +7,7 @@ project(cache-engine
 
 option(BUILD_TESTS "Build tests" ON)
 
+set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
 set(CMAKE_DEBUG_POSTFIX "d")
 
 FILE(GLOB_RECURSE hdr "include/ce/*.hpp")
@@ -29,7 +30,7 @@ if(NOT TARGET ct)
     add_subdirectory(external/ct)
 endif()
 
-target_link_libraries(ce ct)
+target_link_libraries(ce PUBLIC ct)
 
 FIND_PACKAGE(CUDA QUIET)
 IF(CUDA_FOUND)
@@ -37,25 +38,29 @@ IF(CUDA_FOUND)
     if(CUDA_TOOLKIT_INCLUDE)
     #    TARGET_INCLUDE_DIRECTORIES(ce PUBLIC $<BUILD_INTERFACE:${CUDA_TOOLKIT_INCLUDE}>)
     endif()
-    TARGET_LINK_LIBRARIES(ce ${CUDA_CUDART_LIBRARY})
+    TARGET_LINK_LIBRARIES(ce PUBLIC ${CUDA_CUDART_LIBRARY})
     TARGET_COMPILE_DEFINITIONS(ce PUBLIC HAVE_CUDA)
 ENDIF()
 
 FIND_PACKAGE(OpenCV QUIET COMPONENTS core cudaimgproc cudaarithm cudawarping imgcodecs)
 IF(OpenCV_FOUND)
     TARGET_COMPILE_DEFINITIONS(ce PUBLIC HAVE_OPENCV)
-    TARGET_LINK_LIBRARIES(ce ${OpenCV_LIBS})
+    TARGET_LINK_LIBRARIES(ce PUBLIC ${OpenCV_LIBS})
 ENDIF(OpenCV_FOUND)
 
 add_executable(example_ce_main main.cpp)
-TARGET_LINK_LIBRARIES(example_ce_main ce)
+TARGET_LINK_LIBRARIES(example_ce_main
+    PUBLIC ce
+)
 
 if(BUILD_TESTS)
     enable_testing()
     IF(CUDA_FOUND)
         file(GLOB_RECURSE src "tests/cuda/*.cpp" "tests/cuda/*.cu")
         cuda_add_executable(test_ce_cuda_sync ${src})
-        TARGET_LINK_LIBRARIES(test_ce_cuda_sync ce)
+        TARGET_LINK_LIBRARIES(test_ce_cuda_sync
+            PUBLIC ce
+        )
         add_test(test_ce_cuda_sync test_ce_cuda_sync)
     ENDIF()
 
